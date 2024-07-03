@@ -31,14 +31,15 @@
 # When using Gradle or Maven with auto-import, you should exclude module files,
 # since they will be recreated, and may cause churn.  Uncomment if using
 # auto-import.
-# .idea/artifacts
-# .idea/compiler.xml
-# .idea/jarRepositories.xml
-# .idea/modules.xml
-# .idea/*.iml
-# .idea/modules
-# *.iml
-# *.ipr
+ .idea/artifacts
+ .idea/compiler.xml
+ .idea/jarRepositories.xml
+ .idea/modules.xml
+ .idea/*.iml
+ .idea/modules
+ *.iml
+ *.ipr
+ .idea/
 
 # CMake
 cmake-build-*/
@@ -75,7 +76,7 @@ fabric.properties
 
 
 # Local .terraform directories
-**/.terraform/*
+**/**/.terraform/*
 
 # .tfstate files
 *.tfstate
@@ -125,7 +126,6 @@ dist/
 downloads/
 eggs/
 .eggs/
-lib/
 lib64/
 parts/
 sdist/
@@ -251,9 +251,6 @@ cython_debug/
 # Compiled class file
 *.class
 
-# Log file
-*.log
-
 # BlueJ files
 *.ctxt
 
@@ -344,12 +341,10 @@ web_modules/
 .yarn-integrity
 
 # dotenv environment variables file
-.env
 .env.test
 .env.production
 
 # parcel-bundler cache (https://parceljs.org/)
-.cache
 .parcel-cache
 
 # Next.js build output
