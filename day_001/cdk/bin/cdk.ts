@@ -16,7 +16,7 @@ new CdkStack(app, 'Day1ChallengeCdkStack', {
     tags: {
         Environment: "DEV",
         Project: "100DaysIaCChalenge",
-        IaCTools: "cdk",
+        IaCTools: "CDK",
         Owner: "kevinlactiokemta@gmail.com",
         Days: "001",
     }

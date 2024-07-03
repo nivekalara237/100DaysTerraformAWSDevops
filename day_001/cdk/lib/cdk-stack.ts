@@ -2,7 +2,6 @@ import * as cdk from 'aws-cdk-lib';
 import {aws_ec2 as ec2, Fn} from 'aws-cdk-lib';
 import {Construct} from 'constructs';
 import {readFileSync} from "fs";
-import {UserData} from "aws-cdk-lib/aws-ec2";
 
 export interface Day1StackProps extends cdk.StackProps {
     cidrVpc: string,
@@ -20,7 +19,7 @@ export class CdkStack extends cdk.Stack {
         // Create the network
         const {vpc, subnet} = this.createNetworkSet(props);
         const {sg, kp} = this.createSecuritySet(vpc, props);
-        const userDataEncoded = UserData.forLinux();
+        const userDataEncoded = ec2.UserData.forLinux();
         userDataEncoded.addCommands(readFileSync("./assets/ec2_bootstrap_script.sh", "utf-8"))
         const webserver = new ec2.CfnInstance(this, "WebInstance", {
             keyName: kp.keyName,
