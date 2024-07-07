@@ -1,0 +1,182 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: "The web tier app stack"
+Mappings:
+  CidrMap:
+    Vpc:
+      Value: "10.0.0.0/16"
+    PublicSubnet:
+      Value: "10.0.1.0/24"
+    Internet:
+      Value: "0.0.0.0/0"
+  Ec2Settings:
+    Type:
+      Value: t2.micro
+    AMI:
+      Value: ami-04b70fa74e45c3917
+
+Parameters:
+  Region:
+    Type: String
+    Default: "us-east-1"
+Outputs:
+  PrivateKeyPairContent:
+    Description: "The private key content"
+    Value: !GetAtt InstanceKeyPair.KeyFingerprint
+Resources:
+  MainVpc:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: !FindInMap [ CidrMap, Vpc, Value ]
+      EnableDnsHostnames: true
+      EnableDnsSupport: true
+      Tags:
+        - Key: Name
+          Value: "MainVpc"
+        - Key: IaCTool
+          Value: "cfn"
+        - Key: Environment
+          Value: "Dev"
+        - Key: Project
+          Value: "100DaysIaCChallenge"
+  PublicSubnet:
+    Type: AWS::EC2::Subnet
+    DependsOn: MainVpc
+    Properties:
+      VpcId: !Ref MainVpc
+      CidrBlock: !FindInMap [ CidrMap, PublicSubnet, Value ]
+      AvailabilityZone: !Join [ "", [ !Ref Region, "a" ] ]
+      MapPublicIpOnLaunch: true
+      PrivateDnsNameOptionsOnLaunch:
+        EnableResourceNameDnsARecord: true
+        HostnameType: ip-name
+      Tags:
+        - Key: Name
+          Value: "Public-Subnet"
+        - Key: IaCTool
+          Value: "cfn"
+        - Key: Environment
+          Value: "Dev"
+        - Key: Project
+          Value: "100DaysIaCChalenge"
+  InternetGateway:
+    Type: AWS::EC2::InternetGateway
+    Properties:
+      Tags:
+        - Key: Name
+          Value: "InternetGateway"
+        - Key: IaCTool
+          Value: "cfn"
+        - Key: Environment
+          Value: "Dev"
+        - Key: Project
+          Value: "100DaysIaCChalenge"
+  IGWVpcAttachment:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties:
+      VpcId: !Ref MainVpc
+      InternetGatewayId: !Ref InternetGateway
+  PublicRouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref MainVpc
+      Tags:
+        - Key: Name
+          Value: "PublicRouteTable"
+        - Key: IaCTool
+          Value: "cfn"
+        - Key: Environment
+          Value: "Dev"
+        - Key: Project
+          Value: "100DaysIaCChalenge"
+  MainRoute:
+    Type: AWS::EC2::Route
+    Properties:
+      GatewayId: !Ref InternetGateway
+      RouteTableId: !Ref PublicRouteTable
+      DestinationCidrBlock: !FindInMap [ CidrMap, Internet, Value ]
+  PublicSubnetRoutingAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref PublicSubnet
+      RouteTableId: !Ref PublicRouteTable
+  #  IGWRoutingAssociation:
+  #    Type: AWS::EC2::GatewayRouteTableAssociation
+  #    Properties:
+  #      GatewayId: !Ref InternetGateway
+  #      RouteTableId: !Ref PublicRouteTable
+  InstanceKeyPair:
+    Type: AWS::EC2::KeyPair
+    Properties:
+      KeyName: "day1kp"
+      KeyFormat: pem
+      KeyType: rsa
+      Tags:
+        - Key: Name
+          Value: "InstanceKeyPair"
+        - Key: IaCTool
+          Value: "cfn"
+        - Key: Environment
+          Value: "Dev"
+        - Key: Project
+          Value: "100DaysIaCChalenge"
+  InstanceSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    DependsOn: MainVpc
+    Properties:
+      GroupDescription: "Allowing traffics in/out ec2 instance"
+      GroupName: "Allow-HTTP-SSH"
+      VpcId: !Ref MainVpc
+      SecurityGroupEgress:
+        - CidrIp: !FindInMap [ CidrMap, Internet, Value ]
+          Description: "Allow traffic to the internet"
+          FromPort: 0
+          ToPort: 0
+          IpProtocol: "-1"
+      SecurityGroupIngress:
+        - CidrIp: !FindInMap [ CidrMap, Internet, Value ]
+          Description: "Allow HTTP traffic to the instance"
+          FromPort: 80
+          ToPort: 80
+          IpProtocol: "tcp"
+        - CidrIp: !FindInMap [ CidrMap, Internet, Value ]
+          Description: "Allow SSH traffic to the instance"
+          FromPort: 22
+          ToPort: 22
+          IpProtocol: "tcp"
+      Tags:
+        - Key: Name
+          Value: "InstanceSecurityGroup"
+        - Key: IaCTool
+          Value: "cfn"
+        - Key: Environment
+          Value: "Dev"
+        - Key: Project
+          Value: "100DaysIaCChalenge"
+  WebInstance:
+    Type: AWS::EC2::Instance
+    DependsOn:
+      - PublicSubnet
+      - InstanceSecurityGroup
+    Properties:
+      ImageId: !FindInMap [ Ec2Settings, AMI, Value ]
+      InstanceType: !FindInMap [ Ec2Settings, Type, Value ]
+      Tenancy: default
+      SubnetId: !Ref PublicSubnet
+      SecurityGroupIds:
+        - !Ref InstanceSecurityGroup
+      KeyName: !Ref InstanceKeyPair
+      UserData:
+        Fn::Base64: !Sub |
+          #!/bin/bash
+          sudo apt update -y
+          sudo apt install nginx -y
+          sudo systemctl start nginx.service
+      Tags:
+        - Key: Name
+          Value: "InstanceSecurityGroup"
+        - Key: IaCTool
+          Value: "cfn"
+        - Key: Environment
+          Value: "Dev"
+        - Key: Project
+          Value: "100DaysIaCChallenge"
