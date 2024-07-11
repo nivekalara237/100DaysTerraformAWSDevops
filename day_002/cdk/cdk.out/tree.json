@@ -1,0 +1,183 @@
+{
+  "version": "tree-0.1",
+  "tree": {
+    "id": "App",
+    "path": "",
+    "children": {
+      "CdkStack": {
+        "id": "CdkStack",
+        "path": "CdkStack",
+        "children": {
+          "DefaultVpc": {
+            "id": "DefaultVpc",
+            "path": "CdkStack/DefaultVpc",
+            "constructInfo": {
+              "fqn": "aws-cdk-lib.Resource",
+              "version": "2.147.1"
+            }
+          },
+          "MySubnet": {
+            "id": "MySubnet",
+            "path": "CdkStack/MySubnet",
+            "attributes": {
+              "aws:cdk:cloudformation:type": "AWS::EC2::Subnet",
+              "aws:cdk:cloudformation:props": {
+                "availabilityZone": "us-east-1a",
+                "cidrBlock": "172.31.20.0/24",
+                "mapPublicIpOnLaunch": true,
+                "vpcId": "vpc-028e3b625cb2dfe37"
+              }
+            },
+            "constructInfo": {
+              "fqn": "aws-cdk-lib.aws_ec2.CfnSubnet",
+              "version": "2.147.1"
+            }
+          },
+          "MySG": {
+            "id": "MySG",
+            "path": "CdkStack/MySG",
+            "attributes": {
+              "aws:cdk:cloudformation:type": "AWS::EC2::SecurityGroup",
+              "aws:cdk:cloudformation:props": {
+                "groupDescription": "Allowing SSH",
+                "securityGroupEgress": [
+                  {
+                    "fromPort": 0,
+                    "toPort": 0,
+                    "ipProtocol": "-1",
+                    "cidrIp": "0.0.0.0/0"
+                  }
+                ],
+                "securityGroupIngress": [
+                  {
+                    "fromPort": 22,
+                    "toPort": 22,
+                    "ipProtocol": "tcp",
+                    "cidrIp": "0.0.0.0/0"
+                  }
+                ],
+                "vpcId": "vpc-028e3b625cb2dfe37"
+              }
+            },
+            "constructInfo": {
+              "fqn": "aws-cdk-lib.aws_ec2.CfnSecurityGroup",
+              "version": "2.147.1"
+            }
+          },
+          "MyKeyPair": {
+            "id": "MyKeyPair",
+            "path": "CdkStack/MyKeyPair",
+            "attributes": {
+              "aws:cdk:cloudformation:type": "AWS::EC2::KeyPair",
+              "aws:cdk:cloudformation:props": {
+                "keyFormat": "pem",
+                "keyName": "day2kp",
+                "keyType": "rsa"
+              }
+            },
+            "constructInfo": {
+              "fqn": "aws-cdk-lib.aws_ec2.CfnKeyPair",
+              "version": "2.147.1"
+            }
+          },
+          "Webserver": {
+            "id": "Webserver",
+            "path": "CdkStack/Webserver",
+            "attributes": {
+              "aws:cdk:cloudformation:type": "AWS::EC2::Instance",
+              "aws:cdk:cloudformation:props": {
+                "imageId": "ami-04b70fa74e45c3917",
+                "instanceType": "t2.micro",
+                "keyName": "day2kp",
+                "securityGroupIds": [
+                  {
+                    "Fn::GetAtt": [
+                      "MySG",
+                      "GroupId"
+                    ]
+                  }
+                ],
+                "subnetId": {
+                  "Fn::GetAtt": [
+                    "MySubnet",
+                    "SubnetId"
+                  ]
+                }
+              }
+            },
+            "constructInfo": {
+              "fqn": "aws-cdk-lib.aws_ec2.CfnInstance",
+              "version": "2.147.1"
+            }
+          },
+          "IpOutput": {
+            "id": "IpOutput",
+            "path": "CdkStack/IpOutput",
+            "constructInfo": {
+              "fqn": "aws-cdk-lib.CfnOutput",
+              "version": "2.147.1"
+            }
+          },
+          "KeypairOutput": {
+            "id": "KeypairOutput",
+            "path": "CdkStack/KeypairOutput",
+            "constructInfo": {
+              "fqn": "aws-cdk-lib.CfnOutput",
+              "version": "2.147.1"
+            }
+          },
+          "CDKMetadata": {
+            "id": "CDKMetadata",
+            "path": "CdkStack/CDKMetadata",
+            "children": {
+              "Default": {
+                "id": "Default",
+                "path": "CdkStack/CDKMetadata/Default",
+                "constructInfo": {
+                  "fqn": "aws-cdk-lib.CfnResource",
+                  "version": "2.147.1"
+                }
+              }
+            },
+            "constructInfo": {
+              "fqn": "constructs.Construct",
+              "version": "10.3.0"
+            }
+          },
+          "BootstrapVersion": {
+            "id": "BootstrapVersion",
+            "path": "CdkStack/BootstrapVersion",
+            "constructInfo": {
+              "fqn": "aws-cdk-lib.CfnParameter",
+              "version": "2.147.1"
+            }
+          },
+          "CheckBootstrapVersion": {
+            "id": "CheckBootstrapVersion",
+            "path": "CdkStack/CheckBootstrapVersion",
+            "constructInfo": {
+              "fqn": "aws-cdk-lib.CfnRule",
+              "version": "2.147.1"
+            }
+          }
+        },
+        "constructInfo": {
+          "fqn": "aws-cdk-lib.Stack",
+          "version": "2.147.1"
+        }
+      },
+      "Tree": {
+        "id": "Tree",
+        "path": "Tree",
+        "constructInfo": {
+          "fqn": "constructs.Construct",
+          "version": "10.3.0"
+        }
+      }
+    },
+    "constructInfo": {
+      "fqn": "aws-cdk-lib.App",
+      "version": "2.147.1"
+    }
+  }
+}

@@ -1,0 +1,7 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: 'Stack creating EC2 Instance and KeyPair attached'
+Resources:
+  DfVpc:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: "173.234.0.0/18"
