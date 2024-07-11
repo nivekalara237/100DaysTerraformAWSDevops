@@ -1,0 +1,139 @@
+{
+ "Resources": {
+  "MySubnet": {
+   "Type": "AWS::EC2::Subnet",
+   "Properties": {
+    "AvailabilityZone": "us-east-1a",
+    "CidrBlock": "172.31.20.0/24",
+    "MapPublicIpOnLaunch": true,
+    "VpcId": "vpc-028e3b625cb2dfe37"
+   },
+   "Metadata": {
+    "aws:cdk:path": "CdkStack/MySubnet"
+   }
+  },
+  "MySG": {
+   "Type": "AWS::EC2::SecurityGroup",
+   "Properties": {
+    "GroupDescription": "Allowing SSH",
+    "SecurityGroupEgress": [
+     {
+      "CidrIp": "0.0.0.0/0",
+      "FromPort": 0,
+      "IpProtocol": "-1",
+      "ToPort": 0
+     }
+    ],
+    "SecurityGroupIngress": [
+     {
+      "CidrIp": "0.0.0.0/0",
+      "FromPort": 22,
+      "IpProtocol": "tcp",
+      "ToPort": 22
+     }
+    ],
+    "VpcId": "vpc-028e3b625cb2dfe37"
+   },
+   "Metadata": {
+    "aws:cdk:path": "CdkStack/MySG"
+   }
+  },
+  "MyKeyPair": {
+   "Type": "AWS::EC2::KeyPair",
+   "Properties": {
+    "KeyFormat": "pem",
+    "KeyName": "day2kp",
+    "KeyType": "rsa"
+   },
+   "Metadata": {
+    "aws:cdk:path": "CdkStack/MyKeyPair"
+   }
+  },
+  "Webserver": {
+   "Type": "AWS::EC2::Instance",
+   "Properties": {
+    "ImageId": "ami-04b70fa74e45c3917",
+    "InstanceType": "t2.micro",
+    "KeyName": "day2kp",
+    "SecurityGroupIds": [
+     {
+      "Fn::GetAtt": [
+       "MySG",
+       "GroupId"
+      ]
+     }
+    ],
+    "SubnetId": {
+     "Fn::GetAtt": [
+      "MySubnet",
+      "SubnetId"
+     ]
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "CdkStack/Webserver"
+   }
+  },
+  "CDKMetadata": {
+   "Type": "AWS::CDK::Metadata",
+   "Properties": {
+    "Analytics": "v2:deflate64:H4sIAAAAAAAA/zWMwQrCMBBEv6X3ZDVB0LsHEQ9K+wGSpiuk1aRkdy2l9N8liqd582DGgtntwVRuIu27QT9DC0vDzg+qRkqSPSo30R29heX4iI20EVkVQi858HzKScYiLjjfXMgFz5HYRY9rKVfhUb6T/+OqYuoQetq8zQHsFmzVUwg6S+TwQqh/+QHk/9vrnAAAAA=="
+   },
+   "Metadata": {
+    "aws:cdk:path": "CdkStack/CDKMetadata/Default"
+   }
+  }
+ },
+ "Outputs": {
+  "InstanceIp": {
+   "Value": {
+    "Fn::GetAtt": [
+     "Webserver",
+     "PublicIp"
+    ]
+   }
+  },
+  "KeypairID": {
+   "Value": {
+    "Fn::GetAtt": [
+     "MyKeyPair",
+     "KeyPairId"
+    ]
+   }
+  }
+ },
+ "Parameters": {
+  "BootstrapVersion": {
+   "Type": "AWS::SSM::Parameter::Value<String>",
+   "Default": "/cdk-bootstrap/hnb659fds/version",
+   "Description": "Version of the CDK Bootstrap resources in this environment, automatically retrieved from SSM Parameter Store. [cdk:skip]"
+  }
+ },
+ "Rules": {
+  "CheckBootstrapVersion": {
+   "Assertions": [
+    {
+     "Assert": {
+      "Fn::Not": [
+       {
+        "Fn::Contains": [
+         [
+          "1",
+          "2",
+          "3",
+          "4",
+          "5"
+         ],
+         {
+          "Ref": "BootstrapVersion"
+         }
+        ]
+       }
+      ]
+     },
+     "AssertDescription": "CDK bootstrap stack version 6 required. Please run 'cdk bootstrap' with a recent version of the CDK CLI."
+    }
+   ]
+  }
+ }
+}
