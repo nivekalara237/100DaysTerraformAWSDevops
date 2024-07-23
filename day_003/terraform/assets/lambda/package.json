@@ -1,5 +1,5 @@
 {
-  "main": "src/index.js",
+  "main": "index.js",
   "type": "module",
   "scripts": {
     "build": "del-cli 'bin/*' '!.gitkeep'",
