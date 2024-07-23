@@ -67,7 +67,7 @@ resource "aws_s3_bucket" "pictures-thumbs" {
   }
 }
 
-resource "aws_s3_bucket_public_access_block" "public-access" {
+resource "aws_s3_bucket_public_access_block" "private_access" {
   for_each = {
     pic = aws_s3_bucket.pictures-bucket.id,
     th  = aws_s3_bucket.pictures-thumbs.id
@@ -107,7 +107,7 @@ resource "aws_iam_policy" "lambda_policy_for_s3_and_dyanmodb" {
       },
       {
         Effect = "Allow"
-        Action : [
+        Action = [
           "logs:CreateLogGroup",
           "logs:CreateLogStream",
           "logs:PutLogEvents"
@@ -143,13 +143,13 @@ data "archive_file" "function" {
 resource "aws_lambda_function" "performing_images_function" {
   function_name    = "performing-images-function"
   role             = aws_iam_role.for_lambda.arn
-  handler          = "src/index.handler"
+  handler          = "index.handler"
   runtime          = "nodejs18.x"
   filename         = "./assets/func.zip"
   source_code_hash = data.archive_file.function.output_base64sha256
   memory_size      = 128
   timeout          = 10
-  
+
   timeouts {
     create = "30m"
     update = "40m"
@@ -178,12 +178,10 @@ resource "aws_lambda_function" "performing_images_function" {
 data "aws_iam_policy_document" "assume_role" {
   statement {
     effect = "Allow"
-
     principals {
       identifiers = ["lambda.amazonaws.com"]
       type = "Service"
     }
-
     actions = ["sts:AssumeRole"]
   }
 }
