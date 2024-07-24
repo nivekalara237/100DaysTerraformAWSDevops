@@ -1,0 +1,9 @@
+{
+  "vpc-provider:account=272567733216:filter.isDefault=true:filter.owner-id=272567733216:region=us-east-1:returnAsymmetricSubnets=true": {
+    "vpcId": "vpc-028e3b625cb2dfe37",
+    "vpcCidrBlock": "172.31.0.0/16",
+    "ownerAccountId": "272567733216",
+    "availabilityZones": [],
+    "subnetGroups": []
+  }
+}
