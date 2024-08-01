@@ -40,6 +40,8 @@
  *.iml
  *.ipr
  .idea/
+*DS_Store
+.DS_Store
 
 # CMake
 cmake-build-*/

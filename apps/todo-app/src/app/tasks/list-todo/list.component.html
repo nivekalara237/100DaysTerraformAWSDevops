@@ -1,0 +1,63 @@
+<div class="text-center mb-4">
+  <h2 class="mt-2 text-2xl font-extrabold leading-8 text-gray-900 sm:text-3xl sm:leading-9">The Todo(s) list</h2>
+</div>
+<form (ngSubmit)="addTodoList()" [formGroup]="formCreateTodo" class="w-full max-w-sm mx-auto px-4 py-2" novalidate>
+  <div class="flex items-center border-b-2 border-teal-500 py-2">
+    <input class="appearance-none bg-transparent
+      border-none w-full text-gray-700 mr-3 py-1
+       px-2 focus:border-none" formControlName="name"
+           id="todo-name"
+           placeholder="Add a task" type="text">
+    <button
+      [ngClass]="{'animate-pulse': nameCtrl.valid}"
+      class="flex-shrink-0 bg-teal-500 hover:bg-teal-700 border-teal-500 hover:border-teal-700 text-sm border-4 text-white py-1 px-2 rounded"
+      type="submit">
+      (+) add
+    </button>
+  </div>
+  @if (errors.todoExist) {
+    <div class="mt-2 text-sm text-red-700 dark:text-red-500">
+      <span class="text-light"> the todo list <span class="font-bold">{{ nameCtrl.value }}</span> already exists </span>
+    </div>
+  }
+  @if (nameCtrl.invalid && (nameCtrl.dirty || nameCtrl.touched)) {
+    <div class="mt-2 text-sm text-red-700 dark:text-red-500">
+      <div class="font-light" *ngIf="nameCtrl.hasError('required')">The <b>name</b> is required</div>
+      <div class="font-light" *ngIf="nameCtrl.hasError('minlength')">
+        The <b>min length of name</b> is must higher than 2
+      </div>
+      <div class="font-light" *ngIf="nameCtrl.hasError('maxlength')">
+        The <b>max length of name</b> is must less than 64
+      </div>
+    </div>
+  }
+</form>
+<ul class="mt-8 space-y-3 font-medium divide-y-2">
+  @for (todo of todoList; track todo.name) {
+    <li class="!py-2">
+      <a class="flex items-center" (click)="select(todo)" href="javascript:void(0)">
+        <div class="flex-shrink-0">
+          <svg class="w-8 h-8 text-[#41B06E]" fill="currentColor" viewBox="0 0 20 20">
+            <path clip-rule="evenodd"
+                  d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                  fill-rule="evenodd"></path>
+          </svg>
+        </div>
+        <p class="ml-3">
+          <span class="text-lg capitalize leading-5 text-[#405D72]">{{ todo.name }}</span>
+          <span class="text-[9px] flex items-center align-middle italic text-gray-500">
+            <span class="mr-0.5">
+              <svg class="w-3 h-3 text-gray-800 dark:text-white" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"
+                   width="24" height="24" fill="none" viewBox="0 0 24 24">
+                <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                      d="M12 8v4l3 3m6-3a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+              </svg>
+            </span>
+            {{ todo.createdAt }}
+          </span>
+
+        </p>
+      </a>
+    </li>
+  }
+</ul>

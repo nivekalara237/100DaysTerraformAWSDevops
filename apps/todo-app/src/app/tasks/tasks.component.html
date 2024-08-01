@@ -1,0 +1,27 @@
+<div class="container relative flex flex-col justify-between h-full px-10 mx-auto xl:px-0 mt-5">
+  <h2 class="mb-1 text-3xl font-extrabold leading-tight text-gray-900">My Tasks + To-Do</h2>
+  <p class="mb-6 text-lg text-gray-500">Here is a few of the awesome Services we provide.</p>
+</div>
+
+
+<div class="flex h-screen">
+  <div class="w-1/3 bg-white p-4 shadow-lg">
+    <app-list-todo (selected)="selectCurrentTodo($event)"></app-list-todo>
+  </div>
+  <!-- Main Content -->
+  <div class="w-2/3 bg-gray-50 overflow-y-auto">
+    @if (currentTodo) {
+      <app-task-list [todo]="currentTodo"></app-task-list>
+    } @else {
+      <div class="w-full flex items-center align-middle">
+        <span class="text-gray-500 font-extralight">
+          No To-Do List selected
+        </span>
+      </div>
+    }
+
+  </div>
+</div>
+
+
+

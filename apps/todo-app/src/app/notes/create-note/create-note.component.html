@@ -1,0 +1,25 @@
+<form [formGroup]="form" novalidate>
+  <div class="mb-6">
+    <label class="block mb-2 text-sm font-medium text-green-700 dark:text-green-500" for="title">Note Tittle</label>
+    <input
+      class="bg-[#EADFB4] border-4 border-s-4 border-[#DEAC80] text-green-900 dark:text-[#153448] placeholder-[#9BB0C1] dark:placeholder-green-500 text-sm rounded-none focus:ring-[#AF8F6F] focus:border-[#AF8F6F] block w-full p-2.5 dark:bg-gray-700 dark:border-green-500"
+      formControlName="title" id="title"
+      placeholder="Enter the note title (required)" type="text">
+    @if (titleCtrl.invalid && (titleCtrl.dirty || titleCtrl.touched)) {
+      <div class="mt-2 text-sm text-red-700 dark:text-red-500">
+        <div class="font-light" *ngIf="titleCtrl.hasError('required')">The title is required</div>
+      </div>
+    }
+  </div>
+
+  <div class="mb-6"></div>
+  <div class="mb-6">
+    <quill-editor [required]="true" formControlName="content" id="content"
+                  placeholder="Note content (required)"></quill-editor>
+    @if (contentCtrl.invalid && (contentCtrl.dirty || contentCtrl.touched)) {
+      <div class="mt-2 text-sm text-green-600 dark:text-green-500">
+        <div class="font-light" *ngIf="contentCtrl.hasError('required')">The content is required</div>
+      </div>
+    }
+  </div>
+</form>
