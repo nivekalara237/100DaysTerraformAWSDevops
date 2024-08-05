@@ -42,13 +42,17 @@ export class ListComponent implements OnInit {
         this.errors.todoExist = true
       } else {
         this.todoService.addTodo(this.nameCtrl.value!)
-          .subscribe(value => {
-            this.formCreateTodo.patchValue({ name: null }, { emitEvent: false, onlySelf: true })
-            this.errors.todoExist = false
-            this.loadTodoList()
-          }, error => {
-            this.errors.todoExist = true
+          .subscribe({
+            next: (value) => {
+              this.formCreateTodo.patchValue({ name: null }, { emitEvent: false, onlySelf: true })
+              this.errors.todoExist = false
+              this.loadTodoList()
+            },
+            error: (err) => {
+              this.errors.todoExist = true
+            }
           })
+
       }
     }
   }
@@ -60,7 +64,7 @@ export class ListComponent implements OnInit {
   private loadTodoList() {
     this.todoService.getAllTodos()
       .subscribe(value => {
-        this.todoList = value.body!
+        this.todoList = value
       })
   }
 }

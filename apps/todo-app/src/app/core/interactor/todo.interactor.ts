@@ -1,9 +1,10 @@
 import { Todo } from '../domain/todo.domain'
+import { Observable } from 'rxjs'
 
 export interface TodoInteractor {
-  add(todoName: string): Todo;
+  add(todoName: string): Observable<Todo>;
 
-  remove(tododID: string): boolean;
+  remove(tododID: string): Observable<boolean>;
 
-  list(): Todo[]
+  list(): Observable<Todo[]>
 }

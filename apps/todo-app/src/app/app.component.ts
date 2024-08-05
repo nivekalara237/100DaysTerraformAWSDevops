@@ -1,12 +1,11 @@
 import { Component, Inject, OnInit, PLATFORM_ID } from '@angular/core'
-import { RouterLink, RouterOutlet } from '@angular/router'
-import { DashboardComponent } from './dashboard/dashboard.component'
+import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router'
 import { isPlatformBrowser } from '@angular/common'
 
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [RouterOutlet, DashboardComponent, RouterLink],
+  imports: [RouterOutlet, RouterLink, RouterLinkActive],
   templateUrl: './app.component.html',
   styleUrl: './app.component.scss'
 })

@@ -24,8 +24,8 @@ export class TasksComponent implements OnInit {
 
   ngOnInit() {
     this.todoService.getAllTodos().subscribe(value => {
-      if (value.body?.length) {
-        this.currentTodo = value.body.at(0)!
+      if (value?.length) {
+        this.currentTodo = value.at(0)!
       }
     })
   }

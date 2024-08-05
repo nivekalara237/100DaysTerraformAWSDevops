@@ -71,7 +71,7 @@ export class TaskListComponent implements OnInit, AfterViewInit {
   loadTasks = () => {
     this.taskService.getTodoTasks(this.todo.id!)
       .subscribe(value => {
-        this.tasks = value.body || []
+        this.tasks = value || []
       })
   }
 
@@ -86,10 +86,8 @@ export class TaskListComponent implements OnInit, AfterViewInit {
           this.nameCtrl.value,
           this.todo.id!
         ).subscribe(value => {
-          if (value.status === 201) {
-            this.loadTasks()
-            this.formCreateTask.reset(null, { emitEvent: false })
-          }
+          this.loadTasks()
+          this.formCreateTask.reset(null, { emitEvent: false })
         })
       }
     }
@@ -100,9 +98,7 @@ export class TaskListComponent implements OnInit, AfterViewInit {
     const toUpdate = { ...task, status: $event.target.checked ? TaskStatusEnum.COMPLETED : TaskStatusEnum.RUNNING }
     this.taskService.updateTask(toUpdate, this.todo.id!)
       .subscribe(value => {
-        if (value.status === 200) {
-          this.loadTasks()
-        }
+        this.loadTasks()
       })
   }
 
@@ -113,9 +109,7 @@ export class TaskListComponent implements OnInit, AfterViewInit {
   deleteTask(task: TaskDTO) {
     this.taskService.deleteTask(task.id!, this.todo.id!)
       .subscribe(value => {
-        if (value.status === 204 && value.body) {
-          this.loadTasks()
-        }
+        this.loadTasks()
       })
   }
 }

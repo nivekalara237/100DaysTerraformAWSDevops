@@ -1,0 +1,12 @@
+{
+  "main": "index.ts",
+  "type": "commonjs",
+  "dependencies": {
+    "aws-lambda": "^1.0.7",
+    "@aws-sdk/client-dynamodb": "^3.620.0",
+    "@aws-sdk/lib-dynamodb": "^3.620.0",
+    "@aws-lambda/http": "^1.0.1",
+    "uuid": "^10.0.0",
+    "moment": "^2.30.1"
+  }
+}
