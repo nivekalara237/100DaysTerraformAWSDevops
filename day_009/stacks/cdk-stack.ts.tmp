@@ -1,0 +1,700 @@
+import {
+  Aws,
+  aws_apigateway as api,
+  aws_dynamodb as dynamodb,
+  aws_iam as iam,
+  CfnOutput,
+  RemovalPolicy
+} from 'aws-cdk-lib'
+import { Construct } from 'constructs'
+import { MediaType } from './apigw/media-type.enum'
+import { ApiMethod } from './apigw/api-method.resource'
+import { dependencies } from '../apps/package.json'
+import { randomUUID } from 'node:crypto'
+import { CustomStackProps } from './custom-stack.props'
+import { LambdaFunction } from './constructs/lambda.construct'
+import { LambdaLayer } from './constructs/lambda-layer.construct'
+import { Cognito } from './constructs/cognito.contruct'
+import { BaseStack } from './base.stack'
+import { ConnectionType } from 'aws-cdk-lib/aws-apigateway'
+
+
+export class CdkStack extends BaseStack {
+  constructor(scope: Construct, id: string, private props: CustomStackProps) {
+    super(scope, id, props)
+
+    const table = this.createDynamoDBTable(props)
+    const restApi = new api.RestApi(this, 'RestApiGatewayResource', {
+      restApiName: 'ApiGateway',
+      //apiKeySourceType: api.ApiKeySourceType.HEADER,
+      // disableExecuteApiEndpoint: false,
+      defaultMethodOptions: {
+        // authorizationType: api.AuthorizationType.NONE
+      },
+      defaultCorsPreflightOptions: {
+        allowHeaders: ['Content-Type',
+          'X-Amz-Date',
+          'Authorization',
+          'X-Api-Key',
+          'Access-Control-Allow-Credentials',
+          'Access-Control-Allow-Headers',
+          'Impersonating-User-Sub'],
+        allowMethods: ['OPTIONS', 'GET', 'POST', 'PUT', 'PATCH', 'DELETE'],
+        allowCredentials: true,
+        allowOrigins: api.Cors.ALL_ORIGINS
+      },
+      cloudWatchRole: true,
+      cloudWatchRoleRemovalPolicy: RemovalPolicy.DESTROY
+    })
+
+    const cognitoUserPool = new Cognito(this, 'CustomCognitoResource', {
+      verificationEmailUrl: 'https://localhost:4200/auth/confirm-email',
+      fromEmail: props.cognito?.verificationFromEmail!
+    })
+
+    const authorizer = new api.CognitoUserPoolsAuthorizer(this, 'AuthorizerResource', {
+      authorizerName: 'todo-app-authorizer',
+      cognitoUserPools: [cognitoUserPool.resource],
+      identitySource: api.IdentitySource.header('Authorization')
+    })
+
+    const lambdaLayerVersion = new LambdaLayer(this, 'NodeModulesDependenciesLayerResource', {
+      ...props,
+      layerName: 'NodeModulesDependenciesLayer'
+    })
+
+    const lambdaFunction = this.createLambdaFunction(table.attrArn, restApi.restApiId, lambdaLayerVersion.layerArn)
+
+    const {
+      getTodoListsResource,
+      createTodoListResource,
+      updateTodoListResource,
+      deleteTodoListResource,
+      auth
+    } = this.createResources(restApi)
+
+    const authsMethods = this.createAuthResource(
+      restApi,
+      auth,
+      lambdaLayerVersion.layerArn,
+      {
+        secretArn: cognitoUserPool.secretValueArn,
+        clientId: cognitoUserPool.defaultAppClientId,
+        userPooId: cognitoUserPool.userPoolId,
+        userPoolArn: cognitoUserPool.userPoolArn
+      }
+    )
+    const testresource = restApi.root.addResource('test-auth')
+
+
+    const testmethod = testresource.addMethod('GET', new api.LambdaIntegration(lambdaFunction.resource, {
+      connectionType: ConnectionType.INTERNET,
+      proxy: true
+      /*requestParameters: {
+        'integration.request.header.Authorization': 'method.request.header.Authorization'
+      },
+      integrationResponses: [{
+        statusCode: '200',
+        responseParameters: {
+          'method.response.header.Access-Control-Allow-Headers': '\'Content-Type,X-Amz-Date,Authorization,X-Api-key,X-Amz-Security-Token\'',
+          'method.response.header.Access-Control-Allow-Methods': '\'GET,OPTIONS,POST,DELETE,PUT\'',
+          'method.response.header.Access-Control-Allow-Origin': '\'*\''
+        }
+      }]*/
+    }), {
+      authorizationType: api.AuthorizationType.COGNITO,
+      authorizer: authorizer
+      /*requestParameters: {
+        'method.request.header.Authorization': true,
+        'method.request.header.x-amzn-apigateway-api-id': true,
+        'method.request.header.X-Amz-Date': true,
+        'method.request.header.User-Agent': true,
+        'method.request.header.Host': true,
+        'method.request.header.X-Amz-Content-Sha256': true,
+        'method.request.header.X-Amzn-Trace-Id': true
+      },
+      methodResponses: [{
+        statusCode: '200',
+        responseParameters: {
+          'method.response.header.Access-Control-Allow-Headers': true,
+          'method.response.header.Access-Control-Allow-Methods': true,
+          'method.response.header.Access-Control-Allow-Origin': true
+        }
+      }]*/
+    })
+
+    const getTodoListsMethod = new ApiMethod(this, 'ApiTodoListsMethodResource', {
+      methodType: MediaType.GET,
+      authType: api.AuthorizationType.COGNITO,
+      authorizer: authorizer,
+      restApiId: restApi.restApiId,
+      resourceId: getTodoListsResource,
+      operationName: 'GetAllTodoLists',
+      integration: {
+        lambdaHandler: lambdaFunction.resource
+      },
+      requestParams: {
+        headers: ['Authorization']
+      }
+    }).resource
+
+    const createTodoListMethod = new ApiMethod(this, 'ApiCreateTodoListResource', {
+      methodType: MediaType.POST,
+      authType: api.AuthorizationType.COGNITO,
+      authorizer: authorizer,
+      restApiId: restApi.restApiId,
+      resourceId: createTodoListResource,
+      operationName: 'CreateTodoList',
+      integration: {
+        connection: api.ConnectionType.INTERNET,
+        type: api.IntegrationType.AWS_PROXY,
+        httpMethod: MediaType.POST,
+        uri: `arn:aws:apigateway:${props.env?.region}:lambda:path/2015-03-31/functions/${lambdaFunction.functionArn}/invocations`
+      },
+      requestParams: {
+        headers: ['Authorization']
+      }
+    }).resource
+
+    const updateTodoListMethod = new ApiMethod(this, 'ApiUpdateTodoListResource', {
+      methodType: MediaType.PUT,
+      authType: api.AuthorizationType.COGNITO,
+      authorizer: authorizer,
+      restApiId: restApi.restApiId,
+      resourceId: updateTodoListResource,
+      operationName: 'UpdateTodoList',
+      integration: {
+        connection: api.ConnectionType.INTERNET,
+        type: api.IntegrationType.AWS_PROXY,
+        httpMethod: MediaType.POST,
+        uri: `arn:aws:apigateway:${props.env?.region}:lambda:path/2015-03-31/functions/${lambdaFunction.functionArn}/invocations`
+      },
+      requestParams: {
+        paths: ['todoListId'],
+        headers: ['Authorization']
+      }
+    }).resource
+
+    const deleteTodoListMethod = new ApiMethod(this, 'ApiDeleteTodoListMethodResource', {
+      methodType: MediaType.DELETE,
+      authType: api.AuthorizationType.COGNITO,
+      authorizer: authorizer,
+      restApiId: restApi.restApiId,
+      resourceId: deleteTodoListResource,
+      operationName: 'DeleteTodoList',
+      integration: {
+        connection: api.ConnectionType.INTERNET,
+        type: api.IntegrationType.AWS_PROXY,
+        httpMethod: MediaType.POST,
+        uri: `arn:aws:apigateway:${props.env?.region}:lambda:path/2015-03-31/functions/${lambdaFunction.functionArn}/invocations`
+      },
+      requestParams: {
+        paths: ['todoListId'],
+        headers: ['Authorization']
+      }
+    }).resource
+
+    getTodoListsMethod.node.addDependency(getTodoListsResource)
+    createTodoListMethod.node.addDependency(createTodoListResource)
+    updateTodoListMethod.node.addDependency(updateTodoListResource)
+    deleteTodoListMethod.node.addDependency(deleteTodoListResource)
+
+    const apiDeployment = new api.Deployment(this, 'ApiRestDeployment', {
+      api: restApi,
+      stageName: props.stage
+    })
+
+    apiDeployment.node.addDependency(authorizer)
+    apiDeployment.node.addDependency(restApi);
+
+    [...Object.values(authsMethods),
+      getTodoListsMethod,
+      createTodoListMethod,
+      deleteTodoListMethod,
+      updateTodoListMethod
+    ].forEach(value => apiDeployment._addMethodDependency(value))
+
+    /*new api.Stage(this, 'DevStageResource', {
+      stageName: 'dev',
+      variables: {
+        USER_POOL_ID: cognitoUserPool.userPoolId,
+        ENV_NAME: 'env:dev'
+      },
+      deployment: apiDeployment
+    })
+
+    new api.Stage(this, 'StagingStageResource', {
+      stageName: 'staging',
+      variables: {
+        USER_POOL_ID: cognitoUserPool.userPoolId,
+        ENV_NAME: 'env:staging'
+      },
+      deployment: apiDeployment
+    })*/
+
+    new CfnOutput(this, 'ApiGatewayUrlOutput', {
+      value: restApi.url,
+      key: 'ApiGatewayUrl'
+    })
+  }
+
+  private createResources(restApi: api.RestApi) {
+    const rootResource = restApi.root.addResource('todo-app-api')
+
+    const authRoot = restApi.root.addResource('auth')
+
+    const cors: api.CorsOptions = {
+      allowHeaders: api.Cors.DEFAULT_HEADERS,
+      allowMethods: [MediaType.POST, MediaType.PUT, MediaType.DELETE],
+      allowOrigins: api.Cors.ALL_ORIGINS
+    }
+
+    const getTodoListsResource = rootResource.addResource('todolists', {
+      defaultCorsPreflightOptions: cors,
+      defaultMethodOptions: {
+        operationName: 'ListAllTodoLists'
+      }
+    })
+
+    const createTodoListResource = getTodoListsResource.addResource('create-todolist', {
+      defaultMethodOptions: {
+        operationName: 'CreateTodoLists'
+      },
+      defaultCorsPreflightOptions: cors
+    })
+
+    const pathVariableSegmentResource = getTodoListsResource
+      .addResource('{todoListId}')
+
+    const updateTodoListLastSegmentResource = pathVariableSegmentResource
+      .addResource('update-todolist', {
+        defaultCorsPreflightOptions: cors,
+        defaultMethodOptions: {
+          operationName: 'UpdateTodoList'
+        }
+      })
+
+    const deleteTodoListLastSegmentResource = pathVariableSegmentResource
+      .addResource('delete-todolist', {
+        defaultCorsPreflightOptions: cors,
+        defaultMethodOptions: {
+          operationName: 'DeleteTodoList'
+        }
+      })
+
+
+    const loginResource = authRoot.addResource('login', {
+      defaultCorsPreflightOptions: cors
+    })
+    const registerResource = authRoot.addResource('register', {
+      defaultCorsPreflightOptions: cors
+    })
+    const resendConfirmationCodeResource = authRoot.addResource('resend-confirmation-email')
+    const confirmResource = authRoot.addResource('confirm-email', {
+      defaultCorsPreflightOptions: cors
+    })
+
+    return {
+      rootResource,
+      getTodoListsResource,
+      createTodoListResource,
+      updateTodoListResource: updateTodoListLastSegmentResource,
+      deleteTodoListResource: deleteTodoListLastSegmentResource,
+      auth: {
+        loginResource,
+        registerResource,
+        confirmResource,
+        resendConfirmationCodeResource
+      }
+    }
+  }
+
+  private createLambdaFunction(dynamodbTableArn: string, restApiId: string, layerArn: string) {
+    const fun = new LambdaFunction(this, 'TodoLambdaFunctionResource', {
+      functionName: 'Todo-App-NodejsFunction',
+      entryFunction: './apps/functions/todo-app/index.ts',
+      env: {
+        TABLE_NAME: this.props.tableName,
+        REGION: this.props.env?.region!
+      },
+      logged: true,
+      role: {
+        name: 'TodoLambdaRole',
+        inlinePolicies: {
+          dynamodb: new iam.PolicyDocument({
+            assignSids: true,
+            statements: [
+              new iam.PolicyStatement({
+                actions: [
+                  'dynamodb:PutItem',
+                  'dynamodb:GetItem',
+                  'dynamodb:DeleteItem',
+                  'dynamodb:UpdateItem',
+                  'dynamodb:Scan',
+                  'dynamodb:Query'
+                ],
+                effect: iam.Effect.ALLOW,
+                resources: [dynamodbTableArn]
+              })
+            ]
+          })
+        }
+      },
+      layersArns: [layerArn]
+    })
+    fun.resource.addPermission('TodoAppLambdaPermissionResource', {
+      action: 'lambda:InvokeFunction',
+      principal: new iam.ServicePrincipal('apigateway.amazonaws.com'),
+      sourceAccount: this.props.env?.account,
+      sourceArn: `arn:${Aws.PARTITION}:execute-api:${this.props.env?.region}:${this.props.env?.account}:${restApiId}/*/*/*`
+    })
+    return fun
+  }
+
+  private createDynamoDBTable(props: CustomStackProps) {
+    return new dynamodb.CfnTable(this, 'DynamoDBTableResource', {
+      tableName: props.tableName,
+      keySchema: [{
+        keyType: 'HASH',
+        attributeName: 'ID'
+      }, {
+        keyType: 'RANGE',
+        attributeName: 'TodoName'
+      }],
+      attributeDefinitions: [{
+        attributeName: 'ID',
+        attributeType: dynamodb.AttributeType.STRING
+      }, {
+        attributeName: 'TodoName',
+        attributeType: dynamodb.AttributeType.STRING
+      }],
+      billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
+      tableClass: dynamodb.TableClass.STANDARD,
+
+      tags: [{
+        key: 'Name',
+        value: `DynamoDB-Table-${props.tableName}`
+      }]
+    })
+  }
+
+  private createAuthResource(restApi: api.RestApi, auth: {
+    registerResource: api.Resource;
+    loginResource: api.Resource;
+    confirmResource: api.Resource,
+    resendConfirmationCodeResource: api.Resource
+  }, layerArn: string, cognito: {
+    secretArn: string,
+    userPoolArn: string, userPooId: string, clientId: string
+  }) {
+
+    const cognitoInlinePolicy = {
+      cognito: new iam.PolicyDocument({
+        assignSids: true,
+        statements: [
+          new iam.PolicyStatement({
+            effect: iam.Effect.ALLOW,
+            actions: [
+              'cognito-idp:ConfirmDevice',
+              'cognito-idp:ChangePassword',
+              'cognito-idp:ConfirmForgotPassword',
+              'cognito-idp:ChangePassword',
+              'cognito-idp:ConfirmSignUp',
+              'cognito-idp:ForgotPassword',
+              'cognito-idp:GetUser',
+              'cognito-idp:GetUserAttributeVerificationCode',
+              'cognito-idp:ListUsers',
+              'cognito-idp:SignUp',
+              'cognito-idp:UpdateUserAttributes'
+            ],
+            resources: [
+              cognito.userPoolArn
+            ]
+          })
+        ]
+      }),
+      secret: new iam.PolicyDocument({
+        assignSids: true,
+        statements: [
+          new iam.PolicyStatement({
+            effect: iam.Effect.ALLOW,
+            actions: ['secretsmanager:GetSecretValue'],
+            resources: [cognito.secretArn]
+          })
+        ]
+      })
+    }
+
+    const loginFunction = new LambdaFunction(this, 'LoginFunction', {
+      functionName: 'Auth-Cognito-Login-NodejsFunction',
+      entryFunction: './apps/functions/auth/login.function.ts',
+      env: {
+        USER_POOL_ID: cognito.userPooId,
+        SECRET_VALUE_ARN: cognito.secretArn,
+        APP_CLIENT_ID: cognito.clientId,
+        REGION: this.props.env?.region!
+      },
+      logged: true,
+      role: {
+        inlinePolicies: cognitoInlinePolicy
+      },
+      layersArns: [layerArn],
+      externalDeps: Object.keys(dependencies)
+    })
+
+    const registerFunction = new LambdaFunction(this, 'RegistrationFunction', {
+      functionName: 'Auth-Cognito-Register-NodejsFunction',
+      entryFunction: './apps/functions/auth/register.function.ts',
+      env: {
+        USER_POOL_ID: cognito.userPooId,
+        SECRET_VALUE_ARN: cognito.secretArn,
+        APP_CLIENT_ID: cognito.clientId,
+        REGION: this.props.env?.region!
+      },
+      role: {
+        name: 'AuthRegistrationRole',
+        inlinePolicies: cognitoInlinePolicy
+      },
+      layersArns: [layerArn],
+      externalDeps: Object.keys(dependencies)
+    })
+
+    const confirmUserFunction = new LambdaFunction(this, 'ConfirmUserFunction', {
+      functionName: 'Auth-Cognito-ConfirmUser-NodejsFunction',
+      entryFunction: './apps/functions/auth/confirm-user.function.ts',
+      env: {
+        USER_POOL_ID: cognito.userPooId,
+        SECRET_VALUE_ARN: cognito.secretArn,
+        APP_CLIENT_ID: cognito.clientId,
+        DOMAIN: this.props.cognito?.domain!,
+        REGION: this.props.env?.region!
+      },
+      logged: true,
+      role: {
+        name: 'AuthConfirmRole',
+        inlinePolicies: cognitoInlinePolicy
+      },
+      layersArns: [layerArn],
+      externalDeps: Object.keys(dependencies)
+    })
+
+    const resendConfirmCodeFunction = new LambdaFunction(this, 'ResendConfirmCodeFunction', {
+      functionName: 'Auth-Cognito-ResendConfirmCode-NodejsFunction',
+      entryFunction: './apps/functions/auth/resend-confirm-code.function.ts',
+      env: {
+        USER_POOL_ID: cognito.userPooId,
+        SECRET_VALUE_ARN: cognito.secretArn,
+        APP_CLIENT_ID: cognito.clientId,
+        REGION: this.props.env?.region!
+      },
+      role: {
+        name: 'ResendConfirmCode',
+        inlinePolicies: cognitoInlinePolicy
+      },
+      logged: true,
+      layersArns: [layerArn],
+      externalDeps: Object.keys(dependencies)
+    })
+
+    Array.of(loginFunction, registerFunction, confirmUserFunction)
+      .forEach(func => {
+        func.resource.addPermission(`APIGW-Permission-${randomUUID()}`, {
+          principal: new iam.ServicePrincipal('apigateway.amazonaws.com'),
+          sourceArn: `arn:${Aws.PARTITION}:execute-api:${this.props.env?.region}:${this.props.env?.account}:${restApi.restApiId}/*/*/*`,
+          sourceAccount: this.props.env?.account,
+          scope: this,
+          action: 'lambda:InvokeFunction'
+        })
+      })
+
+    const loginMethod = new ApiMethod(this, 'AuthLoginMethodResource', {
+      methodType: MediaType.POST,
+      authType: api.AuthorizationType.NONE,
+      restApiId: restApi.restApiId,
+      resourceId: auth.loginResource,
+      operationName: 'AuthLogin',
+      integration: {
+        connection: api.ConnectionType.INTERNET,
+        type: api.IntegrationType.AWS_PROXY,
+        httpMethod: MediaType.POST,
+        uri: `arn:aws:apigateway:${this.props.env?.region}:lambda:path/2015-03-31/functions/${loginFunction.functionArn}/invocations`
+      },
+      requestModels: {
+        'application/json': new api.Model(this, 'LoginModelResource', {
+          restApi: restApi,
+          contentType: 'application/json',
+          modelName: 'LoginRequestModel',
+          schema: {
+            required: ['password', 'email'],
+            dependencies: {
+              'email': {
+                type: api.JsonSchemaType.STRING
+              },
+              'password': {
+                type: api.JsonSchemaType.STRING
+              },
+              'remember-me': {
+                type: api.JsonSchemaType.BOOLEAN,
+                'default': true
+              }
+            }
+          }
+        })
+      },
+      responseModels: {
+        'application/json': new api.Model(this, 'LoginResponseModelResource', {
+          restApi: restApi,
+          contentType: 'application/json',
+          modelName: 'LoginResponseModel',
+          schema: {
+            dependencies: {
+              'idToken': {
+                type: api.JsonSchemaType.STRING
+              }
+            }
+          }
+        })
+      }
+    }).resource
+
+    const registerMethod = new ApiMethod(this, 'AuthRegistrationMethodResource', {
+      methodType: MediaType.POST,
+      authType: api.AuthorizationType.NONE,
+      restApiId: restApi.restApiId,
+      resourceId: auth.registerResource,
+      operationName: 'AuthRegistration',
+      integration: {
+        connection: api.ConnectionType.INTERNET,
+        type: api.IntegrationType.AWS_PROXY,
+        httpMethod: MediaType.POST,
+        uri: `arn:aws:apigateway:${this.props.env?.region}:lambda:path/2015-03-31/functions/${registerFunction.functionArn}/invocations`
+      },
+      requestModels: {
+        'application/json': new api.Model(this, 'RegistrationModelResource', {
+          restApi: restApi,
+          contentType: 'application/json',
+          modelName: 'RegisterRequestModel',
+          schema: {
+            required: ['password', 'email', 'firstName'],
+            dependencies: {
+              'email': {
+                type: api.JsonSchemaType.STRING
+              },
+              'username': {
+                type: api.JsonSchemaType.STRING
+              },
+              'password': {
+                type: api.JsonSchemaType.STRING
+              },
+              'firstName': {
+                type: api.JsonSchemaType.STRING
+              },
+              'lastName': {
+                type: api.JsonSchemaType.STRING
+              },
+              'birthDate': {
+                type: api.JsonSchemaType.STRING
+              }
+            }
+          }
+        })
+      },
+      responseModels: {
+        'application/json': new api.Model(this, 'RegistrationResponseModelResource', {
+          restApi: restApi,
+          contentType: 'application/json',
+          modelName: 'RegistrationResponseModel',
+          schema: {
+            dependencies: {
+              'message': {
+                type: api.JsonSchemaType.STRING
+              }
+            }
+          }
+        })
+      }
+    }).resource
+
+    const confirmUserMethod = new ApiMethod(this, 'AuthConfirmUserMethodResource', {
+      methodType: MediaType.POST,
+      authType: api.AuthorizationType.NONE,
+      restApiId: restApi.restApiId,
+      resourceId: auth.confirmResource,
+      operationName: 'AuthRegistration',
+      integration: {
+        connection: api.ConnectionType.INTERNET,
+        type: api.IntegrationType.AWS_PROXY,
+        httpMethod: MediaType.POST,
+        uri: `arn:aws:apigateway:${this.props.env?.region}:lambda:path/2015-03-31/functions/${confirmUserFunction.functionArn}/invocations`
+      },
+      requestModels: {
+        'application/json': new api.Model(this, 'ConfirmUserModelResource', {
+          restApi: restApi,
+          contentType: 'application/json',
+          modelName: 'ConfirmUserRequestModel',
+          schema: {
+            required: ['code', 'email'],
+            dependencies: {
+              'email': {
+                type: api.JsonSchemaType.STRING
+              },
+              'code': {
+                type: api.JsonSchemaType.INTEGER
+              }
+            }
+          }
+        })
+      },
+      responseModels: {
+        'application/json': new api.Model(this, 'ConfirmUserResponseModelResource', {
+          restApi: restApi,
+          contentType: 'application/json',
+          modelName: 'ConfirmUserResponseModel',
+          schema: {
+            dependencies: {
+              'message': {
+                type: api.JsonSchemaType.STRING
+              }
+            }
+          }
+        })
+      }
+    }).resource
+
+    const resendConfirmationCodeMethod = new ApiMethod(this, 'AuthResendConfirmationCodeMethodResource', {
+      methodType: MediaType.GET,
+      authType: api.AuthorizationType.NONE,
+      restApiId: restApi.restApiId,
+      resourceId: auth.resendConfirmationCodeResource,
+      operationName: 'AuthResendConfirmationCode',
+      integration: {
+        connection: api.ConnectionType.INTERNET,
+        type: api.IntegrationType.AWS_PROXY,
+        httpMethod: MediaType.POST,
+        uri: `arn:aws:apigateway:${this.props.env?.region}:lambda:path/2015-03-31/functions/${resendConfirmCodeFunction.functionArn}/invocations`
+      },
+      requestModels: {
+        'application/json': new api.Model(this, 'ResendConfirmationCodeModelResource', {
+          restApi: restApi,
+          contentType: 'application/json',
+          modelName: 'ResendConfirmationCodeRequestModel',
+          schema: {
+            required: ['username'],
+            dependencies: {
+              'username': {
+                type: api.JsonSchemaType.STRING
+              }
+            }
+          }
+        })
+      }
+    }).resource
+
+    return {
+      loginMethod,
+      registerMethod,
+      confirmUserMethod,
+      resendConfirmationCodeMethod
+    }
+  }
+}

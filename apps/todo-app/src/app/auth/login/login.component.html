@@ -1,0 +1,122 @@
+<div class="h-screen bg-green-50 flex flex-col justify-center sm:py-12">
+  <div class="p-10 xs:p-0 mx-auto md:w-full md:max-w-md">
+    <h1 class="font-bold text-green-400 text-center text-3xl mb-5">Todo List App</h1>
+    <div class="bg-white shadow w-full rounded-lg divide-y divide-gray-200">
+      <div class="px-5 py-3.5">
+        <div *ngIf="signInFailed">
+          <span class="font-light text-red-600 text-xs">
+            {{ signInFailedMessage }}
+          </span>
+        </div>
+        <div class="py-3.5"></div>
+        <form (ngSubmit)="login()" [formGroup]="form" novalidate>
+          <label class="font-semibold text-sm text-gray-600 pb-1 block">E-mail or Username</label>
+          <input class="border border-green-100 rounded-lg px-3 py-2 mt-1 mb-5 text-sm w-full"
+                 formControlName="email"
+                 type="text" />
+          <label class="font-semibold text-sm text-gray-600 pb-1 block">Password</label>
+          <input class="border border-green-100 rounded-lg px-3 py-2 mt-1 mb-5 text-sm w-full"
+                 formControlName="password"
+                 type="password" />
+          @if ($loading | async) {
+            <button disabled type="button"
+                    class="transition duration-200 bg-green-400 hover:bg-green-600 focus:bg-green-700 focus:shadow-sm focus:ring-4 focus:ring-green-500 focus:ring-opacity-50 text-white w-full py-2.5 rounded-lg text-sm shadow-sm hover:shadow-md font-semibold text-center inline-block">
+              <svg aria-hidden="true" role="status" class="w-6 h-6 mr-4 inline-block text-white animate-spin"
+                   viewBox="0 0 100 101" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path
+                  d="M100 50.5908C100 78.2051 77.6142 100.591 50 100.591C22.3858 100.591 0 78.2051 0 50.5908C0 22.9766 22.3858 0.59082 50 0.59082C77.6142 0.59082 100 22.9766 100 50.5908ZM9.08144 50.5908C9.08144 73.1895 27.4013 91.5094 50 91.5094C72.5987 91.5094 90.9186 73.1895 90.9186 50.5908C90.9186 27.9921 72.5987 9.67226 50 9.67226C27.4013 9.67226 9.08144 27.9921 9.08144 50.5908Z"
+                  fill="#E5E7EB" />
+                <path
+                  d="M93.9676 39.0409C96.393 38.4038 97.8624 35.9116 97.0079 33.5539C95.2932 28.8227 92.871 24.3692 89.8167 20.348C85.8452 15.1192 80.8826 10.7238 75.2124 7.41289C69.5422 4.10194 63.2754 1.94025 56.7698 1.05124C51.7666 0.367541 46.6976 0.446843 41.7345 1.27873C39.2613 1.69328 37.813 4.19778 38.4501 6.62326C39.0873 9.04874 41.5694 10.4717 44.0505 10.1071C47.8511 9.54855 51.7191 9.52689 55.5402 10.0491C60.8642 10.7766 65.9928 12.5457 70.6331 15.2552C75.2735 17.9648 79.3347 21.5619 82.5849 25.841C84.9175 28.9121 86.7997 32.2913 88.1811 35.8758C89.083 38.2158 91.5421 39.6781 93.9676 39.0409Z"
+                  fill="currentColor" />
+              </svg>
+              Logging process...
+            </button>
+          } @else {
+            <button [disabled]="form.invalid"
+                    [ngClass]="{'cursor-not-allowed bg-gray-400 hover:bg-gray-400': form.invalid}"
+                    class="transition duration-200 bg-green-400 hover:bg-green-600 focus:bg-green-700 focus:shadow-sm focus:ring-4 focus:ring-green-500 focus:ring-opacity-50 text-white w-full py-2.5 rounded-lg text-sm shadow-sm hover:shadow-md font-semibold text-center inline-block"
+                    type="submit">
+              <span class="inline-block mr-2">Login</span>
+              <svg class="w-6 h-6 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                   xmlns="http://www.w3.org/2000/svg">
+                <path d="M17 8l4 4m0 0l-4 4m4-4H3" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" />
+              </svg>
+            </button>
+          }
+        </form>
+      </div>
+      <div class="p-5">
+        <div class="grid grid-cols-2">
+          <button
+            class="text-white bg-[#2557D6] hover:bg-[#2557D6]/90 focus:ring-4 focus:ring-[#2557D6]/50 focus:outline-none font-medium rounded-lg text-sm px-5 py-2.5 text-center inline-flex items-center dark:focus:ring-[#2557D6]/50 me-2 mb-2"
+            type="button">
+            <svg aria-hidden="true" class="w-4 h-4 me-2" fill="currentColor"
+                 height="24" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg">
+              <path clip-rule="evenodd"
+                    d="M12.037 21.998a10.313 10.313 0 0 1-7.168-3.049 9.888 9.888 0 0 1-2.868-7.118 9.947 9.947 0 0 1 3.064-6.949A10.37 10.37 0 0 1 12.212 2h.176a9.935 9.935 0 0 1 6.614 2.564L16.457 6.88a6.187 6.187 0 0 0-4.131-1.566 6.9 6.9 0 0 0-4.794 1.913 6.618 6.618 0 0 0-2.045 4.657 6.608 6.608 0 0 0 1.882 4.723 6.891 6.891 0 0 0 4.725 2.07h.143c1.41.072 2.8-.354 3.917-1.2a5.77 5.77 0 0 0 2.172-3.41l.043-.117H12.22v-3.41h9.678c.075.617.109 1.238.1 1.859-.099 5.741-4.017 9.6-9.746 9.6l-.215-.002Z"
+                    fill-rule="evenodd" />
+
+            </svg>
+            Google
+          </button>
+          <button
+            class="text-white bg-[#24292F] hover:bg-[#24292F]/90 focus:ring-4 focus:outline-none focus:ring-[#24292F]/50 font-medium rounded-lg text-sm px-5 py-2.5 text-center inline-flex items-center dark:focus:ring-gray-500 dark:hover:bg-[#050708]/30 me-2 mb-2"
+            type="button">
+            <svg aria-hidden="true" class="w-4 h-4 me-2" fill="currentColor" viewBox="0 0 20 20"
+                 xmlns="http://www.w3.org/2000/svg">
+              <path clip-rule="evenodd"
+                    d="M10 .333A9.911 9.911 0 0 0 6.866 19.65c.5.092.678-.215.678-.477 0-.237-.01-1.017-.014-1.845-2.757.6-3.338-1.169-3.338-1.169a2.627 2.627 0 0 0-1.1-1.451c-.9-.615.07-.6.07-.6a2.084 2.084 0 0 1 1.518 1.021 2.11 2.11 0 0 0 2.884.823c.044-.503.268-.973.63-1.325-2.2-.25-4.516-1.1-4.516-4.9A3.832 3.832 0 0 1 4.7 7.068a3.56 3.56 0 0 1 .095-2.623s.832-.266 2.726 1.016a9.409 9.409 0 0 1 4.962 0c1.89-1.282 2.717-1.016 2.717-1.016.366.83.402 1.768.1 2.623a3.827 3.827 0 0 1 1.02 2.659c0 3.807-2.319 4.644-4.525 4.889a2.366 2.366 0 0 1 .673 1.834c0 1.326-.012 2.394-.012 2.72 0 .263.18.572.681.475A9.911 9.911 0 0 0 10 .333Z"
+                    fill-rule="evenodd" />
+            </svg>
+            Github
+          </button>
+        </div>
+      </div>
+      <div class="py-5">
+        <div class="grid grid-cols-2 gap-1">
+          <div class="text-center sm:text-left whitespace-nowrap">
+            <button
+              class="transition duration-200 mx-5 px-5 py-4 cursor-pointer font-normal text-sm rounded-lg text-gray-500 hover:bg-gray-100 focus:outline-none focus:bg-gray-200 focus:ring-2 focus:ring-gray-400 focus:ring-opacity-50 ring-inset">
+              <svg class="w-4 h-4 inline-block text-green-400 align-text-top" fill="none" stroke="currentColor"
+                   viewBox="0 0 24 24"
+                   xmlns="http://www.w3.org/2000/svg">
+                <path d="M8 11V7a4 4 0 118 0m-4 8v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2z"
+                      stroke-linecap="round" stroke-linejoin="round"
+                      stroke-width="2" />
+              </svg>
+              <span class="inline-block text-green-400 ml-1">Forgot Password</span>
+            </button>
+          </div>
+          <div class="text-center sm:text-right whitespace-nowrap">
+            <button [routerLink]="['/auth/sign-up']"
+                    class="transition duration-200 mx-5 px-5 py-4 cursor-pointer font-normal text-sm rounded-lg text-green-50 hover:bg-blue-50 focus:outline-none focus:bg-blue-200 focus:ring-2 focus:ring-blue-400 focus:ring-opacity-50 ring-inset"
+                    type="submit">
+              <span class="inline-block text-blue-600 ml-1">
+                Sign Up
+                <svg class="w-4 h-4 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                     xmlns="http://www.w3.org/2000/svg">
+                <path d="M17 8l4 4m0 0l-4 4m4-4H3" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" />
+            </svg>
+              </span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="py-5">
+      <div class="grid grid-cols-2 gap-1">
+        <div class="text-center sm:text-left whitespace-nowrap">
+          <a [routerLink]="['/home']"
+             class="transition duration-200 mx-5 px-5 py-4 cursor-pointer font-normal text-sm rounded-lg text-gray-500 hover:bg-gray-200 focus:outline-none focus:bg-gray-300 focus:ring-2 focus:ring-gray-400 focus:ring-opacity-50 ring-inset">
+            <svg class="w-4 h-4 inline-block align-text-top" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                 xmlns="http://www.w3.org/2000/svg">
+              <path d="M10 19l-7-7m0 0l7-7m-7 7h18" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" />
+            </svg>
+            <span class="inline-block ml-1">Back to <span class="font-bold">dashboard</span></span>
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

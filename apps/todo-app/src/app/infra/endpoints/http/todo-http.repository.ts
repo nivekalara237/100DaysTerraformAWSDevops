@@ -21,7 +21,7 @@ export class TodoHttpRepository implements TodoInteractor {
   }
 
   add(todoName: string): Observable<Todo> {
-    return this.httpClient.post<TodoResponseDto>(url('/todolists/create-todolist'), {
+    return this.httpClient.post<TodoResponseDto>(url('/todo-app-api/todolists/create-todolist'), {
       name: todoName
     }, {
       responseType: 'json',
@@ -30,12 +30,6 @@ export class TodoHttpRepository implements TodoInteractor {
       catchError((e) => {
         throw e
       }),
-      /*map(value => {
-        if (value.status === 200) {
-          return value.body!
-        }
-        throw 'Http Error: ' + value
-      }),*/
       map(value => ({
         id: value.id,
         name: value.name,
@@ -49,17 +43,16 @@ export class TodoHttpRepository implements TodoInteractor {
   }
 
   list(): Observable<Todo[]> {
-    return this.httpClient.get<TodoResponseDto[]>(url('/todolists'), {
+    return this.httpClient.get<TodoResponseDto[]>(url('/todo-app-api/todolists'), {
       responseType: 'json',
-      observe: 'body'
+      observe: 'response'
     }).pipe(
-      /*map(value => {
-        console.log('DATA', value)
+      map(value => {
         if (value.status === 200) {
           return value.body!
         }
-        throw 'Http Error: ' + value
-      }),*/
+        throw new Error(`Error[${value.status}] - ` + JSON.stringify(value.body))
+      }),
       map(v => {
         return [...v].map(value => ({
           id: value?.id,
@@ -78,7 +71,7 @@ export class TodoHttpRepository implements TodoInteractor {
   }
 
   remove(todoID: string): Observable<boolean> {
-    return this.httpClient.delete<any>(url(`/todolists/${todoID}/delete-todolists`), {
+    return this.httpClient.delete<any>(url(`/todo-app-api/todolists/${todoID}/delete-todolists`), {
       responseType: 'json',
       observe: 'body'
     })
