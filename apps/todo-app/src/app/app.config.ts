@@ -4,13 +4,18 @@ import { provideRouter } from '@angular/router'
 import { routes } from './app.routes'
 import { provideClientHydration } from '@angular/platform-browser'
 import { provideQuillConfig } from 'ngx-quill/config'
-import { provideHttpClient } from '@angular/common/http'
+import { provideHttpClient, withFetch, withInterceptors } from '@angular/common/http'
+import { authorizerInterceptor } from './auth/authorizer-interceptor'
+import { unauthorizedInterceptor } from './auth/unauthorized-interceptor'
 
 export const appConfig: ApplicationConfig = {
   providers: [provideZoneChangeDetection({ eventCoalescing: true }),
     provideRouter(routes),
     provideClientHydration(),
-    provideHttpClient(),
+    provideHttpClient(
+      withFetch(),
+      withInterceptors([authorizerInterceptor, unauthorizedInterceptor])
+    ),
     provideQuillConfig({
       modules: {
         syntax: true,

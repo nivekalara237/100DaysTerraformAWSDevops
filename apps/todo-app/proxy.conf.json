@@ -1,0 +1,12 @@
+{
+  "/dev/**": {
+    "target": "https://07o3q8b4pe.execute-api.us-east-1.amazonaws.com",
+    "secure": false,
+    "logLevel": "trace",
+    "changeOrigin": true
+  },
+  "/local/**": {
+    "target": "http://localhost:3000",
+    "secure": false
+  }
+}

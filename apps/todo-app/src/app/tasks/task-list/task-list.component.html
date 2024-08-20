@@ -130,7 +130,7 @@
                           clip-rule="evenodd" />
                   </svg>
 
-                  <span class="capitalize ml-1">{{ task.status?.toLowerCase() }}</span>
+                  <span class="capitalize ml-1">{{ task.status }}</span>
                 </span>
               }
               @case (TaskStatusEnum.RUNNING) {
@@ -144,7 +144,7 @@
                           clip-rule="evenodd" />
                   </svg>
 
-                  <span class="capitalize ml-1">{{ task.status?.toLowerCase() }}</span>
+                  <span class="capitalize ml-1">{{ task.status }}</span>
                 </span>
               }
               @case (TaskStatusEnum.DUE) {
@@ -155,7 +155,7 @@
                     <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                           d="m16 10 3-3m0 0-3-3m3 3H5v3m3 4-3 3m0 0 3 3m-3-3h14v-3" />
                   </svg>
-                  <span class="capitalize ml-1">{{ task.status?.toLowerCase() }}</span>
+                  <span class="capitalize ml-1">{{ task.status }}</span>
                 </span>
               }
               @case (TaskStatusEnum.CANCELLED) {

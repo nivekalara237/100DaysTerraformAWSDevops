@@ -1,0 +1,50 @@
+<div [id]="'alert-' + alertId" class="relative items-center w-full px-0 py-0 mx-auto md:px-0 lg:px-0 max-w-7xl">
+  <div class="p-3 border-l-4 border-{{ color() }}-500 -6 rounded-r-xl bg-{{ color() }}-50">
+    <div class="flex">
+      <div class="flex-shrink-0">
+        @switch (config.type) {
+          @case ("success") {
+            <svg class="w-6 h-6 text-{{ color() }}-800 dark:text-white" aria-hidden="true"
+                 xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
+              <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M8.5 11.5 11 14l4-4m6 2a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+            </svg>
+          }
+          @case ("error") {
+            <svg class="w-6 h-6 text-{{ color() }}-800 dark:text-white" aria-hidden="true"
+                 xmlns="http://www.w3.org/2000/svg"
+                 width="24" height="24" fill="currentColor" viewBox="0 0 24 24">
+              <path fill-rule="evenodd"
+                    d="M2 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10S2 17.523 2 12Zm7.707-3.707a1 1 0 0 0-1.414 1.414L10.586 12l-2.293 2.293a1 1 0 1 0 1.414 1.414L12 13.414l2.293 2.293a1 1 0 0 0 1.414-1.414L13.414 12l2.293-2.293a1 1 0 0 0-1.414-1.414L12 10.586 9.707 8.293Z"
+                    clip-rule="evenodd" />
+            </svg>
+
+          }
+          @case ("warn") {
+            <svg class="w-6 h-6 text-{{ color() }}-800 dark:text-white" aria-hidden="true"
+                 xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 24 24">
+              <path fill-rule="evenodd"
+                    d="M2 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10S2 17.523 2 12Zm9.408-5.5a1 1 0 1 0 0 2h.01a1 1 0 1 0 0-2h-.01ZM10 10a1 1 0 1 0 0 2h1v3h-1a1 1 0 1 0 0 2h4a1 1 0 1 0 0-2h-1v-4a1 1 0 0 0-1-1h-2Z"
+                    clip-rule="evenodd" />
+            </svg>
+
+          }
+          @default {
+            <svg class="w-6 h-6 text-{{ color() }}-800 dark:text-white" aria-hidden="true"
+                 xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 24 24">
+              <path fill-rule="evenodd"
+                    d="M2 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10S2 17.523 2 12Zm9.408-5.5a1 1 0 1 0 0 2h.01a1 1 0 1 0 0-2h-.01ZM10 10a1 1 0 1 0 0 2h1v3h-1a1 1 0 1 0 0 2h4a1 1 0 1 0 0-2h-1v-4a1 1 0 0 0-1-1h-2Z"
+                    clip-rule="evenodd" />
+            </svg>
+
+          }
+        }
+      </div>
+      <div class="ml-3">
+        <div class="text-sm text-{{ color() }}-600">
+          <p>{{ config.message }}</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

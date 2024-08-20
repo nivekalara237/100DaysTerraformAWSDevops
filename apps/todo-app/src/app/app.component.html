@@ -1,7 +1,7 @@
 <div class="bg-gray-100">
   <div class="flex flex-col md:flex-row h-screen">
     <!-- Sidebar -->
-    <div class="md:w-1/5 bg-white p-4 shadow-lg">
+    <div *ngIf="tokenManager.hasToken()" class="md:w-1/5 bg-white p-4 shadow-lg">
       <div class="text-center mt-8 mb-6">
         <img alt="User Photo" class="mx-auto rounded-full" src="https://picsum.photos/200?dog">
         <h2 class="mt-2 text-lg font-semibold">Kevin Kemta</h2>
@@ -60,12 +60,30 @@
           </svg>
           <span class="truncate">Settings</span>
         </a>
+        <hr>
+        <a (click)="$event.stopPropagation(); logout()" [routerLink]="['/']"
+           class="border-transparent text-gray-900 hover:bg-gray-50 hover:text-gray-900 group border-l-4 px-3 py-2 flex items-center text-sm font-medium"
+           routerLinkActive="bg-teal-50 border-teal-500 text-teal-700 hover:bg-teal-50 hover:text-teal-700 border-l-4">
+          <svg aria-hidden="true" class="text-gray-400 group-hover:text-gray-500 flex-shrink-0 -ml-1 mr-3 h-6 w-6"
+               fill="none" height="24" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg">
+            <path d="M3 9h13a5 5 0 0 1 0 10H7M3 9l4-4M3 9l4 4" stroke="currentColor" stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2" />
+          </svg>
+          <span class="truncate">Log out</span>
+        </a>
       </nav>
     </div>
 
     <!-- Main Content -->
-    <div class="md:w-4/5 bg-gray-50 p-6 overflow-y-auto flex-grow">
-      <div class="hiddend" id="notes-section">
+
+    <div [ngClass]="{'w-full': !tokenManager.hasToken(), 'md:w-4/5': tokenManager.hasToken()}" class="bg-gray-50">
+
+      <div *ngIf="alert.$subscription | async as vm">
+        <app-alert [alertId]="vm.id" [config]="vm.config"></app-alert>
+      </div>
+
+      <div class="p-6 overflow-y-auto flex-grow" id="notes-section">
         <router-outlet />
       </div>
     </div>

@@ -1,4 +1,6 @@
-export const url = (path: string) => `https://7y5nnjn28c.execute-api.us-east-1.amazonaws.com/dev/todo-app-api/${purify(path)}`
+import { environment } from '../../../../environments/environment'
+
+export const url = (path: string) => `${environment.apiUrl}${purify(path)}`
 
 const purify = (path: string): string => {
   if (path.startsWith('/')) {

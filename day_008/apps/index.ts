@@ -1,4 +1,5 @@
 import { APIGatewayProxyEvent } from 'aws-lambda'
+// @ts-ignore
 import { isNull } from 'utils'
 import { LambdaResponse } from './src/infra/dto/lambda.response'
 import { TodoListRepository } from './src/infra/storage/dynamodb/todo-list.repository'
