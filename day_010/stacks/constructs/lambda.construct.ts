@@ -85,11 +85,12 @@ export class LambdaFunction extends cdk.Construct {
   }
 
   grantApi = (restApi: aws_apigateway.RestApi) => {
-    this._resource.addPermission(`TodoAppLambdaPermissionResource_${generateResourceID()}`, {
+    this._resource.addPermission(`LambdaPermissionResource_${generateResourceID()}`, {
       action: 'lambda:InvokeFunction',
       principal: new iam.ServicePrincipal('apigateway.amazonaws.com'),
       sourceAccount: restApi.env?.account,
-      sourceArn: `arn:${Aws.PARTITION}:execute-api:${restApi.env?.region}:${restApi.env?.account}:${restApi.restApiId}/*/*/*`
+      sourceArn: `arn:${Aws.PARTITION}:execute-api:${restApi.env?.region}:${restApi.env?.account}:${restApi.restApiId}/*/*/*`,
+      scope: this
     })
   }
 

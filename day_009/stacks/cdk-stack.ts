@@ -61,24 +61,6 @@ export class CdkStack extends BaseStack {
 
     const lambdaFunction = this.createLambdaFunction(table.attrArn, restApi, lambdaLayerVersion.layerArn)
 
-    const lambdaAuthorizer = new LambdaFunction(this, 'LambdaAuthorizer', {
-      functionName: 'Authorizer',
-      entryFunction: './apps/functions/auth/jwt-authorizer.function.ts',
-      logged: true,
-      role: {
-        name: 'AuthorizerRole'
-      },
-      externalDeps: [
-        ...Object.keys(dependencies)
-      ],
-      env: {
-        APP_CLIENT_ID: cognitoUserPool.defaultAppClientId,
-        USER_POOL_ID: cognitoUserPool.userPoolId,
-        REGION: props.env?.region!
-      },
-      layersArns: [lambdaLayerVersion.layerArn]
-    })
-
     const cognitoAuthorizer = new api.CognitoUserPoolsAuthorizer(this, 'AuthorizerResource', {
       authorizerName: 'todo-app-authorizer',
       cognitoUserPools: [cognitoUserPool.userPool],

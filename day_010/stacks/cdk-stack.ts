@@ -1,22 +1,15 @@
-import {
-  Aws,
-  aws_apigateway as api,
-  aws_dynamodb as dynamodb,
-  aws_iam as iam,
-  CfnOutput,
-  RemovalPolicy
-} from 'aws-cdk-lib'
+import { aws_apigateway as api, aws_dynamodb as dynamodb, aws_iam as iam, CfnOutput, RemovalPolicy } from 'aws-cdk-lib'
 import { Construct } from 'constructs'
 import { MediaType } from './apigw/media-type.enum'
 import { ApiMethod } from './apigw/api-method.resource'
 import { dependencies } from '../apps/package.json'
-import { randomUUID } from 'node:crypto'
 import { CustomStackProps } from './custom-stack.props'
 import { LambdaFunction } from './constructs/lambda.construct'
 import { LambdaLayer } from './constructs/lambda-layer.construct'
 import { Cognito } from './constructs/cognito.contruct'
 import { BaseStack } from './base.stack'
 import { ConnectionType } from 'aws-cdk-lib/aws-apigateway'
+import { ApiDomainName } from './constructs/apigw-domain-name.construct'
 
 
 export class CdkStack extends BaseStack {
@@ -27,6 +20,7 @@ export class CdkStack extends BaseStack {
     const restApi = new api.RestApi(this, 'RestApiGatewayResource', {
       restApiName: 'ApiGateway',
       endpointTypes: [api.EndpointType.REGIONAL],
+      disableExecuteApiEndpoint: true,
       deploy: true,
       deployOptions: {
         stageName: props.stage
@@ -60,24 +54,6 @@ export class CdkStack extends BaseStack {
     })
 
     const lambdaFunction = this.createLambdaFunction(table.attrArn, restApi, lambdaLayerVersion.layerArn)
-
-    const lambdaAuthorizer = new LambdaFunction(this, 'LambdaAuthorizer', {
-      functionName: 'Authorizer',
-      entryFunction: './apps/functions/auth/jwt-authorizer.function.ts',
-      logged: true,
-      role: {
-        name: 'AuthorizerRole'
-      },
-      externalDeps: [
-        ...Object.keys(dependencies)
-      ],
-      env: {
-        APP_CLIENT_ID: cognitoUserPool.defaultAppClientId,
-        USER_POOL_ID: cognitoUserPool.userPoolId,
-        REGION: props.env?.region!
-      },
-      layersArns: [lambdaLayerVersion.layerArn]
-    })
 
     const cognitoAuthorizer = new api.CognitoUserPoolsAuthorizer(this, 'AuthorizerResource', {
       authorizerName: 'todo-app-authorizer',
@@ -162,6 +138,15 @@ export class CdkStack extends BaseStack {
       updateTodoListMethod
     ].forEach(value => apiDeployment._addMethodDependency(value))
 
+    // configure the domain name
+
+    new ApiDomainName(this, 'TodoListApiDomainName', {
+      ...props,
+      apiDomain: props.route53?.apigw?.subdomain ?? 'api.' + this.props.domain,
+      api: restApi,
+      certificateArn: props.route53?.apigw?.certificateArn!
+    })
+
     new CfnOutput(this, 'ApiGatewayUrlOutput', {
       value: restApi.url,
       key: 'ApiGatewayUrl'
@@ -170,9 +155,7 @@ export class CdkStack extends BaseStack {
 
   private createResources(restApi: api.RestApi) {
     const rootResource = restApi.root.addResource('todo-app-api')
-
     const authResource = restApi.root.addResource('auth')
-
     const cors: api.CorsOptions = {
       allowHeaders: api.Cors.DEFAULT_HEADERS,
       allowMethods: [MediaType.POST, MediaType.PUT, MediaType.DELETE],
@@ -390,7 +373,7 @@ export class CdkStack extends BaseStack {
         USER_POOL_ID: cognito.userPooId,
         SECRET_VALUE_ARN: cognito.secretArn,
         APP_CLIENT_ID: cognito.clientId,
-        DOMAIN: this.props.cognito?.domain!,
+        DOMAIN: this.props?.domain!,
         REGION: this.props.env?.region!
       },
       logged: true,
@@ -421,15 +404,7 @@ export class CdkStack extends BaseStack {
     })
 
     Array.of(loginFunction, registerFunction, confirmUserFunction, resendConfirmCodeFunction)
-      .forEach(func => {
-        func.resource.addPermission(`APIGW-Permission-${randomUUID()}`, {
-          principal: new iam.ServicePrincipal('apigateway.amazonaws.com'),
-          sourceArn: `arn:${Aws.PARTITION}:execute-api:${this.props.env?.region}:${this.props.env?.account}:${restApi.restApiId}/*/*/*`,
-          sourceAccount: this.props.env?.account,
-          scope: this,
-          action: 'lambda:InvokeFunction'
-        })
-      })
+      .forEach(func => func.grantApi(restApi))
 
     const methodResponses = [{
       statusCode: '200',

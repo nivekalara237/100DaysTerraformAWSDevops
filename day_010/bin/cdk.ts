@@ -20,9 +20,15 @@ const cdkstack = new CdkStack(app, 'Day010CdkStack', {
   env,
   stage: process.env.STAGE_NAME ?? 'dev',
   tableName: 'TotoListAppTables',
+  domain: 'nivekaa.com',
   cognito: {
-    domain: 'nivekaa.com',
-    verificationFromEmail: 'Kevin Kemta<kevin.k@nivekaa.com>'
+    verificationFromEmail: 'kevin.k@nivekaa.com'
+  },
+  route53: {
+    apigw: {
+      subdomain: 'todo-api.nivekaa.com',
+      certificateArn: process.env.CERTIFICATE_ARN
+    }
   }
 })
 
