@@ -14,7 +14,10 @@ export const appConfig: ApplicationConfig = {
     provideClientHydration(),
     provideHttpClient(
       withFetch(),
-      withInterceptors([authorizerInterceptor, unauthorizedInterceptor])
+      withInterceptors([
+        authorizerInterceptor,
+        // withCredInterceptor,
+        unauthorizedInterceptor])
     ),
     provideQuillConfig({
       modules: {
