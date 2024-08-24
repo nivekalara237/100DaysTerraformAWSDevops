@@ -28,7 +28,6 @@ export const handler: Handler = async (event: APIGatewayProxyEvent, context: Con
       SecretHash: computeSecretHash(CLIENT_ID, clientSecret, payload.username)
     })
     const response = await client.send(command)
-    console.log(response)
     if (response.$metadata.httpStatusCode === 200) {
       return responseOk(null, 'Email resent!!')
     }

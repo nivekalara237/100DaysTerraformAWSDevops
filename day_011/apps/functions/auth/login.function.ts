@@ -19,7 +19,6 @@ const smClient = new SecretsManagerClient({
 
 const CLIENT_ID = process.env.APP_CLIENT_ID
 const SECRET_VALUE_ARN = process.env.SECRET_VALUE_ARN
-const ORIGIN = process.env.ORIGIN
 
 export const handler: Handler = async (event: APIGatewayProxyEvent, context: Context) => {
 
@@ -47,6 +46,9 @@ export const handler: Handler = async (event: APIGatewayProxyEvent, context: Con
     })
 
     const response = await client.send(command)
+
+    console.log(response)
+
     if (response.$metadata.httpStatusCode !== 200) {
       return responseError(`Something wrong!! Status=${response.$metadata.httpStatusCode}`)
     }

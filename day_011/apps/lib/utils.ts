@@ -1,6 +1,5 @@
 import moment from 'moment'
 import { LambdaResponse } from '../src/infra/dto/lambda.response'
-import { APIGatewayProxyEvent } from 'aws-lambda'
 import { createHmac } from 'node:crypto'
 
 export const DATE_FORMAT = 'YYYY-MM-DD'
@@ -10,7 +9,7 @@ export const DATETIME_FORMAT = `${DATE_FORMAT} ${TIME_FORMAT}`
 export const isNull = (value: any) => value === null
 
 export const nowDate = () => moment().format(DATETIME_FORMAT)
-export const toPayload = (event: APIGatewayProxyEvent) => {
+export const toPayload = (event: any) => {
   if (!event.body) return {}
   return event.isBase64Encoded || typeof event.body === 'string' ? JSON.parse(event.body) : event.body
 }

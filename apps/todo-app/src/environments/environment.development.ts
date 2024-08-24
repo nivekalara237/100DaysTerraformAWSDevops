@@ -1,4 +1,4 @@
 export const environment = {
   production: false,
-  apiUrl: '/dev/'
+  apiUrl: 'https://todo-api.nivekaa.com/'
 }
