@@ -10,7 +10,7 @@ import {
 } from 'aws-cdk-lib'
 import { generateResourceID } from './utils'
 
-// import { aws_certificatemanager as acm, aws_route53 as route53 } from "aws-cdk-lib"
+// import { aws_certificatemanager as acm, aws_route53 as route53 } from "aws-cdk-stacks"
 
 interface ApiDomainNameProps extends CustomStackProps {
   apiDomain: string,
