@@ -90,6 +90,7 @@ export class DeveloperToolsStack extends BaseStack {
         reportBuildStatus: true,
         owner: props.git.owner,
         webhook: true,
+        webhookTriggersBatchBuild: true,
         webhookFilters: [
           codebuild.FilterGroup.inEventOf(codebuild.EventAction.PUSH, codebuild.EventAction.PULL_REQUEST_MERGED)
             .andBranchIs(props.git.branchRef ?? 'master')
@@ -112,7 +113,7 @@ export class DeveloperToolsStack extends BaseStack {
           value: emptyBucketLambda.functionArn
         }
       },
-      badge: false,
+      badge: true,
       role: new iam.Role(this, 'BuildCodeRole', {
         path: '/',
         assumedBy: new iam.ServicePrincipal('codebuild.amazonaws.com', {

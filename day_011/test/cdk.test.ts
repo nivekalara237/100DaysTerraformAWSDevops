@@ -3,7 +3,7 @@
 // import * as Cdk from '../stacks/cdk-stack';
 
 // example test. To run these tests, uncomment this file along with the
-// example resource in stacks/cdk-stack.ts
+// example resource in stacks/cdk-main.stack.ts
 test('SQS Queue Created', () => {
 //   const app = new cdk.App();
 //     // WHEN
