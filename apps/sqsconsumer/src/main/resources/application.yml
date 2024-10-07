@@ -1,0 +1,15 @@
+server:
+  port: 8089
+spring:
+  application:
+    name: sqsconsumer
+  cloud:
+    aws:
+      credentials:
+        instance-profile: true
+        profile:
+          name: default
+      region:
+        instance-profile: true
+      sqs:
+        enabled: true
