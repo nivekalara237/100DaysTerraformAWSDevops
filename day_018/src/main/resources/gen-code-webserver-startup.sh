@@ -20,4 +20,4 @@ cd 100DaysTerraformAWSDevops/apps/ms-gen-code
 
 mvn clean install package
 
-nohup java -jar target/gencode-*.jar > sns.log 2>&1 &
+nohup java -jar target/gencode-*.jar > /home/ubuntu/stdout.log 2>&1 &

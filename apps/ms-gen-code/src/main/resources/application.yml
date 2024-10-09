@@ -16,7 +16,7 @@ spring:
 
 sqs:
   queue:
-    gen-code: generate-user-code-queue
+    gen-code: generate-user-code-queue-main
 
 storage:
   main-dir: ${user.home}/${spring.application.name}

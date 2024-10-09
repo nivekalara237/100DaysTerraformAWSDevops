@@ -20,4 +20,4 @@ cd 100DaysTerraformAWSDevops/apps/msproducer
 
 mvn clean install package
 
-nohup java -jar target/msproducer-*.jar > sns.log 2>&1 &
+nohup java -jar target/msproducer-*.jar > /home/ubuntu/stdout.log 2>&1 &

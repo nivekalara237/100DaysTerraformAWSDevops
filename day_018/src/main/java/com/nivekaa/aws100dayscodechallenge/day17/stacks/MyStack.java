@@ -72,7 +72,7 @@ public class MyStack extends Stack {
                     "sqs:ReceiveMessage",
                     "sqs:GetQueueAttributes",
                     "sqs:GetQueueUrl"))
-            .resources(List.of(genCodeQueue.getQueueArn()))
+            .resources(List.of(genUserCodeQueue.getQueueArn()))
             .effect(Effect.ALLOW)
             .build());
 

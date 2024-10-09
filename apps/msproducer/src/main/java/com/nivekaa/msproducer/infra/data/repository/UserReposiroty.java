@@ -23,8 +23,10 @@ public class UserReposiroty implements UserInteractor {
   @Override
   public User createUser(User domain) {
     log.info("""
+        
         User: {}
         The new User is saved under the data storage (DB)
+        
         """, domain);
 
     User user = new User(
