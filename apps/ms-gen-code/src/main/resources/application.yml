@@ -1,0 +1,22 @@
+server:
+  port: 8081
+spring:
+  application:
+    name: gen-code-app
+#  cloud:
+#    aws:
+#      credentials:
+#        instance-profile: true
+#        profile:
+#          name: default
+#      region:
+#        instance-profile: true
+#      sqs:
+#        enabled: true
+
+sqs:
+  queue:
+    gen-code: generate-user-code-queue-main
+
+storage:
+  main-dir: ${user.home}/${spring.application.name}
