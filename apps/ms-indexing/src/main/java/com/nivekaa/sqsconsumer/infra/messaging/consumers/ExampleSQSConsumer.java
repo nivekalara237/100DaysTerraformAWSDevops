@@ -1,7 +1,6 @@
 package com.nivekaa.sqsconsumer.infra.messaging.consumers;
 
-import java.time.Instant;
-import java.util.Date;
+import java.time.LocalDateTime;
 import io.awspring.cloud.sqs.annotation.SqsListener;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
@@ -10,12 +9,16 @@ import org.springframework.stereotype.Component;
 @Component
 public class ExampleSQSConsumer {
 
-    @SqsListener(queueNames = { "my-queue" })
+    @SqsListener(queueNames = { "${sqs.queue.index-user}" })
     public void listen(String payload) {
-        log.info("*******************  SQS Payload ***************");
-        log.info("Message Content: {}", payload);
-        log.info("Received At: {}", Date.from(Instant.now()));
-        log.info("************************************************");
+        log.info("""
+        
+        *******************  SQS Payload ***************
+        * User Info: {}
+        * Received At: {}
+        ************************************************
+        
+        """, payload, LocalDateTime.now());
     }
 
 }

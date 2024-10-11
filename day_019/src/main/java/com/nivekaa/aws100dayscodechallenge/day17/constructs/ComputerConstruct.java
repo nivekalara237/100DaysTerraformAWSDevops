@@ -5,6 +5,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import org.apache.commons.lang3.StringUtils;
 import software.amazon.awscdk.CfnOutput;
 import software.amazon.awscdk.CfnOutputProps;
 import software.amazon.awscdk.StackProps;
@@ -15,6 +16,7 @@ import software.constructs.Construct;
 public class ComputerConstruct extends Construct {
 
   private final IInstance computer;
+  private final IRole role;
 
   public ComputerConstruct(
       Construct scope, String id, ComputerProps computerProps, StackProps props) {
@@ -24,40 +26,53 @@ public class ComputerConstruct extends Construct {
     SecurityGroup securityGroup =
         new SecurityGroup(
             this,
-            "WebserverSGResource",
+            "WebserverSG%sResource".formatted(computerProps.instanceName()),
             SecurityGroupProps.builder()
                 .allowAllOutbound(true)
-                .securityGroupName("Webserver-security-group")
+                .securityGroupName("security-group-%s".formatted(computerProps.instanceName()))
                 .disableInlineRules(true)
                 .vpc(computerProps.vpc())
                 .description("Allow trafic from/to webserver instance")
                 .build());
 
-    securityGroup.addIngressRule(Peer.anyIpv4(), Port.SSH, "Allow ssh traffic");
-    securityGroup.addIngressRule(Peer.anyIpv4(), Port.tcp(8089), "Allow traffic from 8089 port");
+    if (computerProps.allowSSHConnection()) {
+      securityGroup.addIngressRule(Peer.anyIpv4(), Port.SSH, "Allow ssh traffic");
+    }
+    if (computerProps.hostedAppPort() != null && computerProps.hostedAppPort() != 0) {
+      securityGroup.addIngressRule(
+          Peer.anyIpv4(), Port.tcp(computerProps.hostedAppPort()), "Allow traffic from 8089 port");
+    }
 
-    KeyPair keyPair =
-        new KeyPair(
-            this,
-            "KeyPairResource",
-            KeyPairProps.builder()
-                .keyPairName("ws-keypair")
-                .account(Objects.requireNonNull(props.getEnv()).getAccount())
-                .type(KeyPairType.RSA)
-                .format(KeyPairFormat.PEM)
-                .build());
+    this.role = buildInstanceRole(computerProps);
 
-    new CfnOutput(
-        this, "KeyPairId", CfnOutputProps.builder().value(keyPair.getKeyPairId()).build());
+    InstanceProps.Builder instanceBuilder = InstanceProps.builder();
+
+    if (computerProps.enableKeyPair()) {
+      KeyPair keyPair =
+          new KeyPair(
+              this,
+              "KeyPair%sResource".formatted(computerProps.instanceName()),
+              KeyPairProps.builder()
+                  .keyPairName("ws-keypair-%s".formatted(computerProps.instanceName()))
+                  .account(Objects.requireNonNull(props.getEnv()).getAccount())
+                  .type(KeyPairType.RSA)
+                  .format(KeyPairFormat.PEM)
+                  .build());
+
+      new CfnOutput(
+          this,
+          "KeyPairId-%s".formatted(computerProps.instanceName()),
+          CfnOutputProps.builder().value(keyPair.getKeyPairId()).build());
+      instanceBuilder.keyPair(keyPair);
+    }
 
     Instance ec2Instance =
         new Instance(
             this,
-            "WebServerInstanceResource",
-            InstanceProps.builder()
+            "WebServerInstance%sResource".formatted(computerProps.instanceName()),
+            instanceBuilder
                 .securityGroup(securityGroup)
-                .keyPair(keyPair)
-                .instanceName("Webserver-Instance")
+                .instanceName("Webserver-Instance-%s".formatted(computerProps.instanceName()))
                 .machineImage(
                     MachineImage.lookup(
                         LookupMachineImageProps.builder()
@@ -69,7 +84,7 @@ public class ComputerConstruct extends Construct {
                             .windows(false)
                             .build()))
                 .vpc(computerProps.vpc())
-                .role(buildInstanceRole(computerProps))
+                .role(this.getRole())
                 .instanceType(InstanceType.of(InstanceClass.T2, InstanceSize.MICRO))
                 .associatePublicIpAddress(true)
                 .blockDevices(
@@ -79,26 +94,44 @@ public class ComputerConstruct extends Construct {
                             .deviceName("/dev/sda1")
                             .volume(
                                 BlockDeviceVolume.ebs(
-                                    10,
+                                    computerProps.volumeSize() == 0
+                                        ? 10
+                                        : computerProps.volumeSize(),
                                     EbsDeviceOptions.builder()
                                         .deleteOnTermination(true)
                                         .volumeType(EbsDeviceVolumeType.GP3)
                                         .build()))
                             .build()))
-                .userDataCausesReplacement(true)
+                .userDataCausesReplacement(StringUtils.isNotBlank(computerProps.bootstrapScript()))
                 .vpcSubnets(SubnetSelection.builder().subnetType(SubnetType.PUBLIC).build())
                 .build());
 
-    UserData userData = UserData.forLinux();
-    userData.addCommands(readFile("./webserver-startup.sh"));
-
-    ec2Instance.addUserData(userData.render());
+    if (StringUtils.isNotBlank(computerProps.bootstrapScript())) {
+      UserData userData = UserData.forLinux();
+      userData.addCommands(readFile(computerProps.bootstrapScript()));
+      ec2Instance.addUserData(userData.render());
+    }
 
     this.computer = ec2Instance;
   }
 
   public IInstance getComputer() {
     return computer;
+  }
+
+  public IRole getRole() {
+    return role;
+  }
+
+  public void addPolicyToComputer(PolicyStatement... statements) {
+    for (PolicyStatement statement : statements) {
+      this.role.addToPrincipalPolicy(statement);
+    }
+  }
+
+  public void addSecurityGroup(ISecurityGroup securityGroup) {
+    Instance instance = (Instance) this.computer;
+    instance.addSecurityGroup(securityGroup);
   }
 
   private String readFile(String filename) {
@@ -124,33 +157,11 @@ public class ComputerConstruct extends Construct {
   private IRole buildInstanceRole(ComputerProps props) {
     return new Role(
         this,
-        "WebserverInstanceRoleResource",
+        "WebserverInstanceRole%sResource".formatted(props.instanceName()),
         RoleProps.builder()
-            .roleName("webserver-role")
+            .roleName("webserver-role-%s".formatted(props.instanceName()))
             .assumedBy(new ServicePrincipal("ec2.amazonaws.com"))
             .path("/")
-            .inlinePolicies(
-                Map.ofEntries(
-                    Map.entry(
-                        "sqs",
-                        new PolicyDocument(
-                            PolicyDocumentProps.builder()
-                                .assignSids(true)
-                                .statements(
-                                    List.of(
-                                        new PolicyStatement(
-                                            PolicyStatementProps.builder()
-                                                .effect(Effect.ALLOW)
-                                                .actions(
-                                                    List.of(
-                                                        "sqs:DeleteMessage",
-                                                        "sqs:ReceiveMessage",
-                                                        "sqs:SendMessage",
-                                                        "sqs:GetQueueAttributes",
-                                                        "sqs:GetQueueUrl"))
-                                                .resources(List.of(props.sqsQueueArn()))
-                                                .build())))
-                                .build()))))
             .build());
   }
 }

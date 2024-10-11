@@ -9,10 +9,10 @@
 		<relativePath/> <!-- lookup parent from repository -->
 	</parent>
 	<groupId>com.nivekaa</groupId>
-	<artifactId>sqsconsumer</artifactId>
+	<artifactId>ms-indexing</artifactId>
 	<version>0.0.1</version>
-	<name>sqsconsumer</name>
-	<description>Demo SQS</description>
+	<name>ms-indexing</name>
+	<description>Demo SNS/SQS</description>
 	<licenses>
 		<license>
 			<name>Apache-2.0</name>

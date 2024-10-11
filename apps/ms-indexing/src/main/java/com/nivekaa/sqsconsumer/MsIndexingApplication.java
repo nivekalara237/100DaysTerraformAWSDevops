@@ -4,11 +4,11 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 @SpringBootApplication
-public class SqsconsumerApplication {
+public class MsIndexingApplication {
 
 	public static void main(String[] args) {
 		SpringApplication
-				.run(SqsconsumerApplication.class, args);
+				.run(MsIndexingApplication.class, args);
 	}
 
 }

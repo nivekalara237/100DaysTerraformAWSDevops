@@ -5,6 +5,7 @@ import java.time.LocalDateTime;
 import java.util.Date;
 
 import com.fasterxml.jackson.core.JsonFactory;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.json.JsonReadFeature;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -12,7 +13,6 @@ import com.nivekaa.gencode.core.domain.User;
 import com.nivekaa.gencode.core.interactors.LocalStorageInteractor;
 import io.awspring.cloud.sqs.annotation.SqsListener;
 import lombok.RequiredArgsConstructor;
-import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.springframework.stereotype.Component;
@@ -24,7 +24,6 @@ public class UserRegisterSQSConsumer {
 
     private final LocalStorageInteractor storageInteractor;
 
-    @SneakyThrows
     @SqsListener(queueNames = { "${sqs.queue.gen-code}" })
     public void listen(String payload) {
         log.info("""
@@ -43,8 +42,13 @@ public class UserRegisterSQSConsumer {
         .configure(JsonReadFeature.ALLOW_MISSING_VALUES, true)
         .build()).configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
 
-        User user = objectMapper.readValue(payload, User.class);
-    storageInteractor.appendLine(
+      User user;
+      try {
+        user = objectMapper.readValue(payload, User.class);
+      } catch (JsonProcessingException e) {
+        throw new RuntimeException(e);
+      }
+      storageInteractor.appendLine(
         "/users-code.csv",
         "%s;%s;%s;%s"
             .formatted(

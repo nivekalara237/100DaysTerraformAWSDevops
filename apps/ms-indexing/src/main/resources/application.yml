@@ -13,3 +13,7 @@ spring:
         instance-profile: true
       sqs:
         enabled: true
+
+sqs:
+  queue:
+    index-user: indexing-user-queue-main
