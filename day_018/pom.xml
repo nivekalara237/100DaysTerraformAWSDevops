@@ -31,7 +31,7 @@
                 <artifactId>exec-maven-plugin</artifactId>
                 <version>3.1.0</version>
                 <configuration>
-                    <mainClass>com.nivekaa.aws100dayscodechallenge.day17.Day017App</mainClass>
+                    <mainClass>com.nivekaa.aws100dayscodechallenge.day18.Day018App</mainClass>
                 </configuration>
             </plugin>
         </plugins>

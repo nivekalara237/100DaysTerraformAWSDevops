@@ -1,11 +1,11 @@
-package com.nivekaa.aws100dayscodechallenge.day17;
+package com.nivekaa.aws100dayscodechallenge.day18;
 
-import com.nivekaa.aws100dayscodechallenge.day17.stacks.MyStack;
+import com.nivekaa.aws100dayscodechallenge.day18.stacks.MyStack;
 import software.amazon.awscdk.App;
 import software.amazon.awscdk.Environment;
 import software.amazon.awscdk.StackProps;
 
-public class Day017App {
+public class Day018App {
   public static void main(final String[] args) {
     App app = new App();
 

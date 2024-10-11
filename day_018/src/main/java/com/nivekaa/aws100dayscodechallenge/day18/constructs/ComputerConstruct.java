@@ -1,4 +1,4 @@
-package com.nivekaa.aws100dayscodechallenge.day17.constructs;
+package com.nivekaa.aws100dayscodechallenge.day18.constructs;
 
 import java.io.*;
 import java.nio.charset.StandardCharsets;
@@ -15,6 +15,7 @@ import software.constructs.Construct;
 public class ComputerConstruct extends Construct {
 
   private final IInstance computer;
+  private final Role role;
 
   public ComputerConstruct(
       Construct scope, String id, ComputerProps computerProps, StackProps props) {
@@ -34,7 +35,8 @@ public class ComputerConstruct extends Construct {
                 .build());
 
     securityGroup.addIngressRule(Peer.anyIpv4(), Port.SSH, "Allow ssh traffic");
-    securityGroup.addIngressRule(Peer.anyIpv4(), Port.tcp(8089), "Allow traffic from 8089 port");
+    securityGroup.addIngressRule(
+        Peer.anyIpv4(), Port.tcp(computerProps.port()), "Allow traffic from 8089 port");
 
     KeyPair keyPair =
         new KeyPair(
@@ -50,6 +52,7 @@ public class ComputerConstruct extends Construct {
     new CfnOutput(
         this, "KeyPairId", CfnOutputProps.builder().value(keyPair.getKeyPairId()).build());
 
+    this.role = buildInstanceRole();
     Instance ec2Instance =
         new Instance(
             this,
@@ -69,7 +72,7 @@ public class ComputerConstruct extends Construct {
                             .windows(false)
                             .build()))
                 .vpc(computerProps.vpc())
-                .role(buildInstanceRole(computerProps))
+                .role(role)
                 .instanceType(InstanceType.of(InstanceClass.T2, InstanceSize.MICRO))
                 .associatePublicIpAddress(true)
                 .blockDevices(
@@ -101,6 +104,12 @@ public class ComputerConstruct extends Construct {
     return computer;
   }
 
+  public void addPolicyToComputer(PolicyStatement... statements) {
+    for (PolicyStatement statement : statements) {
+      this.role.addToPolicy(statement);
+    }
+  }
+
   private String readFile(String filename) {
 
     InputStream scriptFileStream = getClass().getClassLoader().getResourceAsStream(filename);
@@ -121,7 +130,7 @@ public class ComputerConstruct extends Construct {
     }
   }
 
-  private IRole buildInstanceRole(ComputerProps props) {
+  private Role buildInstanceRole() {
     return new Role(
         this,
         "WebserverInstanceRoleResource",
@@ -129,28 +138,6 @@ public class ComputerConstruct extends Construct {
             .roleName("webserver-role")
             .assumedBy(new ServicePrincipal("ec2.amazonaws.com"))
             .path("/")
-            .inlinePolicies(
-                Map.ofEntries(
-                    Map.entry(
-                        "sqs",
-                        new PolicyDocument(
-                            PolicyDocumentProps.builder()
-                                .assignSids(true)
-                                .statements(
-                                    List.of(
-                                        new PolicyStatement(
-                                            PolicyStatementProps.builder()
-                                                .effect(Effect.ALLOW)
-                                                .actions(
-                                                    List.of(
-                                                        "sqs:DeleteMessage",
-                                                        "sqs:ReceiveMessage",
-                                                        "sqs:SendMessage",
-                                                        "sqs:GetQueueAttributes",
-                                                        "sqs:GetQueueUrl"))
-                                                .resources(List.of(props.sqsQueueArn()))
-                                                .build())))
-                                .build()))))
             .build());
   }
 }

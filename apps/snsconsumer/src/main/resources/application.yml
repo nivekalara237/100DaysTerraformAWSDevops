@@ -1,0 +1,6 @@
+server:
+  port: 8089
+
+sns:
+  topic:
+    name: example-topic-main
