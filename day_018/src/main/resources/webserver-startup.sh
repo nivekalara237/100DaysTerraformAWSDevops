@@ -10,8 +10,6 @@ java --version
 # installing MAVEN
 sudo apt install -y maven
 
-mvn --version
-
 cd /home/ubuntu
 
 git clone --branch day18/consumer-sns-messages https://github.com/nivekalara237/100DaysTerraformAWSDevops.git
@@ -20,4 +18,4 @@ cd 100DaysTerraformAWSDevops/apps/snsconsumer
 
 mvn clean install package
 
-nohup java -jar target/snsconsumer-*.jar > sqs.log 2>&1 &
+nohup java -jar target/snsconsumer-*.jar > /home/ubuntu/stdout.log 2>&1 &

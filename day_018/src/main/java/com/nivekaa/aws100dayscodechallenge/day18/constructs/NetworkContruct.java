@@ -1,4 +1,4 @@
-package com.nivekaa.aws100dayscodechallenge.day17.constructs;
+package com.nivekaa.aws100dayscodechallenge.day18.constructs;
 
 import java.util.List;
 import software.amazon.awscdk.StackProps;
