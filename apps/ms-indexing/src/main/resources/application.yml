@@ -16,4 +16,4 @@ spring:
 
 sqs:
   queue:
-    index-user: indexing-user-queue-main
+    index-user: SearchQueue-main
