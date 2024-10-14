@@ -1,0 +1,11 @@
+{
+  "availability-zones:account=272567733216:region=us-east-1": [
+    "us-east-1a",
+    "us-east-1b",
+    "us-east-1c",
+    "us-east-1d",
+    "us-east-1e",
+    "us-east-1f"
+  ],
+  "ami:account=272567733216:filters.architecture.0=x86_64:filters.image-id.0=ami-0e86e20dae9224db8:filters.image-type.0=machine:filters.name.0=*ubuntu*:filters.state.0=available:region=us-east-1": "ami-0e86e20dae9224db8"
+}
